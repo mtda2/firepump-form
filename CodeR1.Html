@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบตรวจสอบเครื่องยนต์สูบน้ำดับเพลิง</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
+        * { font-family: 'Sarabun', sans-serif; scroll-behavior: smooth; }
+        
+        body {
+            background-image: url('background.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+
+        .theme-gradient-bg { background: linear-gradient(135deg, #86efac 0%, #38bdf8 50%, #6366f1 100%); }
+        .theme-gradient-text { background: linear-gradient(135deg, #4ade80 0%, #0ea5e9 50%, #4f46e5 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .theme-accent-color { accent-color: #0ea5e9; }
+        .radio-item:has(input[type="radio"]:checked),
+        .radio-item-other:has(input[type="radio"]:checked) { background-color: #f0f9ff; border-color: #0ea5e9; }
+        
+        dialog::backdrop {
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .spinner { border: 3px solid #f3f4f6; border-top: 3px solid #3b82f6; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .btn { transition: all 0.3s ease; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .helper-text { font-size: 0.875rem; color: #6b7280; margin-bottom: 8px; }
+
+        #loginDialog {
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            padding: 0;
+            max-width: 400px;
+            overflow: hidden;
+        }
+
+        #loginDialog .dialog-header {
+            background: linear-gradient(135deg, #2dd4bf, #3b82f6, #8b5cf6);
+            padding: 2rem;
+            text-align: center;
+            color: white;
+        }
+
+        #loginDialog .dialog-header h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+        }
+
+        #loginDialog .dialog-header p {
+            opacity: 0.9;
+        }
+        
+        #loginDialog .dialog-header .icon {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        #loginDialog .dialog-body {
+            padding: 2.5rem;
+        }
+
+        .cute-mechanic-img {
+            max-width: 120px;
+            margin: -80px auto 1.5rem;
+            display: block;
+            background: white;
+            border-radius: 50%;
+            padding: 5px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            position: relative;
+            z-index: 10;
+        }
+
+        #loginDialog .form-input {
+            border-radius: 0.75rem;
+            border: 1px solid #d1d5db;
+            padding: 0.8rem 1rem;
+            font-size: 1rem;
+            background-color: white;
+            transition: all 0.2s ease;
+        }
+        
+        #loginDialog .form-input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+            outline: none;
+        }
+        
+        #loginDialog .login-button {
+            background: linear-gradient(45deg, #10b981, #34d399);
+            font-size: 1.1rem;
+            padding: 0.9rem 1.5rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.3);
+            transition: all 0.3s ease;
+            color: white;
+        }
+        
+        #loginDialog .login-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+        }
+
+        #loginError {
+            font-size: 0.9rem;
+            margin-top: 1rem;
+            height: 1.25rem;
+        }
+    </style>
+</head>
+<body>
+
+    <dialog id="loginDialog">
+        <div class="dialog-header">
+            <span class="icon">🛠️</span>
+            <h2>เข้าสู่ระบบ</h2>
+            <p>ระบบตรวจสอบเครื่องยนต์ดับเพลิง</p>
+        </div>
+        <div class="dialog-body">
+            <img src="mechanic.png" alt="Cute Mechanic" class="cute-mechanic-img">
+            <form id="loginForm">
+                <div class="mb-5">
+                    <input type="text" id="username" name="username" class="form-input w-full" placeholder="Username" required>
+                </div>
+                <div class="mb-6">
+                    <input type="password" id="password" name="password" class="form-input w-full" placeholder="Password" required>
+                </div>
+                <button type="submit" id="loginButton" class="login-button w-full flex items-center justify-center gap-2">
+                    <span>เข้าสู่ระบบ →</span>
+                </button>
+                <p id="loginError" class="text-red-600 text-center font-semibold"></p>
+            </form>
+        </div>
+    </dialog>
+    
+    <div id="mainContent" class="hidden">
+        <div class="header-container theme-gradient-bg text-white py-10 mb-8 shadow-xl">
+            <div class="container mx-auto px-4 text-center">
+                 <h1 class="text-4xl font-bold drop-shadow-lg">🚒 แบบฟอร์มทดสอบเครื่องยนต์สูบน้ำดับเพลิง</h1>
+            </div>
+        </div>
+
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-6 bg-white p-4 rounded-xl shadow-lg">
+                <h2 class="text-2xl font-bold text-gray-800">แผนกช่างซ่อมบำรุง โรงพยาบาลเอกชล 2</h2>
+            </div>
+            
+            <form id="inspectionForm" action="https://docs.google.com/forms/d/e/1FAIpQLSdAp3uUyN7l7SGrMYEp0eCQpxkRd-iMnltaFEhAaLZKvQJF-w/formResponse" method="POST" target="hidden_iframe" onsubmit="handleSubmit()">
+                
+                <div class="section-card bg-white rounded-2xl p-6 mb-6 shadow-lg">
+                    <div class="section-header border-b-2 border-gray-100 pb-3 mb-5"><h2 class="section-title text-xl font-bold text-gray-800">📋 ข้อมูลพื้นฐาน</h2></div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">วว/ดด/ป</label><input type="date" name="entry.1632403651" class="form-input w-full p-3 border-2 border-gray-200 rounded-lg" required></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">ผู้ปฏิบัติงาน</label>
+                            <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                                <div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" id="op1" name="entry.1231391232" value="ดอน ถาวรวัฒนเจริญ"><label for="op1">ดอน ถาวรวัฒนเจริญ</label></div>
+                                <div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" id="op2" name="entry.1231391232" value="โชคชัย แดงเจริญสุข"><label for="op2">โชคชัย แดงเจริญสุข</label></div>
+                                <div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" id="op3" name="entry.1231391232" value="ณิชาภัทร ภาระพงศ์"><label for="op3">ณิชาภัทร ภาระพงศ์</label></div>
+                                <div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" id="op4" name="entry.1231391232" value="ประเสริฐ ไกรกาจ"><label for="op4">ประเสริฐ ไกรกาจ</label></div>
+                                <div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" id="op5" name="entry.1231391232" value="เกริกฤทธิ์ คำราพิซ"><label for="op5">เกริกฤทธิ์ คำราพิซ</label></div>
+                                <div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" id="op6" name="entry.1231391232" value="กิตติพงษ์ สุวรรณพงษ์"><label for="op6">กิตติพงษ์ สุวรรณพงษ์</label></div>
+                                <div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" id="op7" name="entry.1231391232" value="สหรัฐ อิศรางกูร ณ อยุธยา"><label for="op7">สหรัฐ อิศรางกูร ณ อยุธยา</label></div>
+                                <div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" id="op8" name="entry.1231391232" value="นภัสกร อรุณโรจน์"><label for="op8">นภัสกร อรุณโรจน์</label></div>
+                                <div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" id="op9" name="entry.1231391232" value="ชนะชล ดีทน"><label for="op9">ชนะชล ดีทน</label></div>
+                                <div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" id="op10" name="entry.1231391232" value="อัครพล สะโรบล ณ อยุธยา"><label for="op10">อัครพล สะโรบล ณ อยุธยา</label></div>
+                                <div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" id="op11" name="entry.1231391232" value="ภานุพงศ์ ธำรงธิติธรรม"><label for="op11">ภานุพงศ์ ธำรงธิติธรรม</label></div>
+                                <div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" id="op12" name="entry.1231391232" value="อรุณ แก้วสุริยา"><label for="op12">อรุณ แก้วสุริยา</label></div>
+                                <div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" id="op13" name="entry.1231391232" value="วรวุฒิ บุลาลม"><label for="op13">วรวุฒิ บุลาลม</label></div>
+                                <div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" id="op14" name="entry.1231391232" value="สุกฤต อิงศรางกูร ณ อยุธยา"><label for="op14">สุกฤต อิงศรางกูร ณ อยุธยา</label></div>
+                                <div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" id="op15" name="entry.1231391232" value="ทศพร ภูชมศรี"><label for="op15">ทศพร ภูชมศรี</label></div>
+                                <div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="operatorOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" id="op16" name="entry.1231391232" value="__other_option__"><label for="op16">อื่นๆ…</label></div><input type="text" id="operatorOther" name="entry.1231391232.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุชื่อ..."></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group mt-4"><label class="form-label font-semibold text-gray-700 block mb-2">PLAN(ความถี่ในการตรวจเช็ค)</label><p class="helper-text">M=เดือนละครั้ง, Y=ปีละครั้ง</p><div class="radio-group flex gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" id="plan1" name="entry.994147210" value="M"><label for="plan1">M</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" id="plan2" name="entry.994147210" value="Y"><label for="plan2">Y</label></div></div></div>
+                </div>
+
+                <div class="section-card bg-white rounded-2xl p-6 mb-6 shadow-lg">
+                    <div class="section-header border-b-2 border-gray-100 pb-3 mb-5"><h2 class="section-title text-xl font-bold text-gray-800">🛢️ ระดับของเหลว</h2></div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Lubricating Oil Level / ระดับน้ำมันหล่อลื่น</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1618028324" value="สูง"><label>สูง</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1618028324" value="กลาง"><label>กลาง</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1618028324" value="ต่ำ"><label>ต่ำ</label></div></div></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Cooling Water Level / ระดับน้ำระบายความร้อน</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.14334317" value="สูง"><label>สูง</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.14334317" value="กลาง"><label>กลาง</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.14334317" value="ต่ำ"><label>ต่ำ</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="waterOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.14334317" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="waterOther" name="entry.14334317.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Battery Distilled Water Level / ระดับน้ำกลั่นของแบตเตอรี่</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1091386807" value="สูง"><label>สูง</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1091386807" value="กลาง"><label>กลาง</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1091386807" value="ต่ำ"><label>ต่ำ</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="batteryOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.1091386807" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="batteryOther" name="entry.1091386807.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                    </div>
+                    <div class="form-group mt-4"><label class="form-label font-semibold text-gray-700 block mb-2">Fuel Tank Level / ระดับเชื้อเพลิงในถัง(ลิตร)</label><input type="number" name="entry.964120987" class="form-input w-full p-3 border-2 border-gray-200 rounded-lg" min="0" placeholder="กรอกปริมาณเชื้อเพลิง"></div>
+                </div>
+
+                <div class="section-card bg-white rounded-2xl p-6 mb-6 shadow-lg">
+                    <div class="section-header border-b-2 border-gray-100 pb-3 mb-5"><h2 class="section-title text-xl font-bold text-gray-800">💧 การตรวจสอบการรั่วไหล</h2></div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Fuel Oil Leaks / การรั่วไหลของน้ำมันเชื้อเพลิง</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.323305993" value="ปกติ"><label>ปกติ</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.323305993" value="รั่วไหล"><label>รั่วไหล</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="fuelLeakOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.323305993" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="fuelLeakOther" name="entry.323305993.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Lubricating Oil Leaks / การรั่วไหลของน้ำมันหล่อลื่น</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1072480311" value="ปกติ"><label>ปกติ</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1072480311" value="รั่วไหล"><label>รั่วไหล</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="lubLeakOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.1072480311" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="lubLeakOther" name="entry.1072480311.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Cooling Water Leaks / การรั่วไหลของน้ำระบายความร้อน</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1607591057" value="ปกติ"><label>ปกติ</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1607591057" value="รั่วไหล"><label>รั่วไหล</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="coolLeakOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.1607591057" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="coolLeakOther" name="entry.1607591057.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                    </div>
+                </div>
+
+                <div class="section-card bg-white rounded-2xl p-6 mb-6 shadow-lg">
+                    <div class="section-header border-b-2 border-gray-100 pb-3 mb-5"><h2 class="section-title text-xl font-bold text-gray-800">🔧 ชิ้นส่วนเครื่องกล</h2></div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Tightness Of Bolts And Nuts / ตรวจเช็คสภาพของสลักและน๊อต</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.719816448" value="น็อตขันแน่นปกติ"><label>น็อตขันแน่นปกติ</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.719816448" value="น็อตไม่แน่น"><label>น็อตไม่แน่น</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="boltsOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.719816448" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="boltsOther" name="entry.719816448.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Tightness Of Electrical Terminal Connections / ตรวจเช็คสภาพของขั้วต่อสายไฟฟ้า</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.737194412" value="ขั้วสายแน่นปกติ"><label>ขั้วสายแน่นปกติ</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.737194412" value="ขั้วสายไม่แน่น"><label>ขั้วสายไม่แน่น</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="elecOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.737194412" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="elecOther" name="entry.737194412.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Air Cleaner Electrical Terminal Connections / ตรวจเช็คไส้กรองอากาศ</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1182164809" value="ปกติ"><label>ปกติ</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1182164809" value="ไส้กรองตัน"><label>ไส้กรองตัน</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="airOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.1182164809" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="airOther" name="entry.1182164809.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Fuel Filter Element / ตรวจเช็คไส้กรองน้ำมัน(STD. ตันหรือไม่ตัน)</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.950885152" value="ไม่ตัน"><label>ไม่ตัน</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.950885152" value="ตัน"><label>ตัน</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="fuelOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.950885152" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="fuelOther" name="entry.950885152.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                    </div>
+                </div>
+
+                <div class="section-card bg-white rounded-2xl p-6 mb-6 shadow-lg">
+                    <div class="section-header border-b-2 border-gray-100 pb-3 mb-5"><h2 class="section-title text-xl font-bold text-gray-800">⚙️ ระบบปั๊ม</h2></div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Check Water  Suction Tube / เช็คน้ำในท่อดูดปั๊มน้ำ</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.824942619" value="ใช้งานได้ปกติ"><label>ใช้งานได้ปกติ</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.824942619" value="มีรอยรั่ว"><label>มีรอยรั่ว</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="suctionOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.824942619" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="suctionOther" name="entry.824942619.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Jocky Pump Test / ทดสอบการทำงานของปั๊มรักษาแรงดัน</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1298699451" value="ปกติ"><label>ปกติ</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1298699451" value="ผิดปกติ"><label>ผิดปกติ</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="jockyPumpOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.1298699451" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="jockyPumpOther" name="entry.1298699451.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">แรงดันน้ำในท่อส่งน้ำดับเพลิงที่ปั๊มเริ่มทำงาน(STD. 100 PSI)</label><input type="number" name="entry.170318696" class="form-input w-full p-3 border-2 border-gray-200 rounded-lg" placeholder="STD. 100 PSI"></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">แรงดันน้ำในท่อส่งน้ำดับเพลิงที่ปั๊มหยุดทำงาน (STD. 120-130 PSI)</label><input type="number" name="entry.835390568" class="form-input w-full p-3 border-2 border-gray-200 rounded-lg" placeholder="STD. 120-130 PSI"></div>
+                    </div>
+                </div>
+
+                <div class="section-card bg-white rounded-2xl p-6 mb-6 shadow-lg">
+                    <div class="section-header border-b-2 border-gray-100 pb-3 mb-5"><h2 class="section-title text-xl font-bold text-gray-800">🚗 สมรรถนะเครื่องยนต์</h2></div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">V Belts Condition / ตรวจเช็คการทำงานของสายพาน </label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.380068157" value="สายพานตึง"><label>สายพานตึง</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.380068157" value="สายพานหย่อน"><label>สายพานหย่อน</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="vbeltPerfOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.380068157" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="vbeltPerfOther" name="entry.380068157.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Running Hours / จำนวนเวลาในการทำงาน(STD. 15 MINUTE)</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.693422880" value="บันทึกแล้ว"><label>บันทึกแล้ว</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.693422880" value="ยังไม่บันทึก"><label>ยังไม่บันทึก</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="runningHoursOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.693422880" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="runningHoursOther" name="entry.693422880.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-4">
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Engine RPM / ความเร็วรอบของเครื่องยนต์ (STD. 2,300 RPM)</label><input type="number" name="entry.1405771031" class="form-input w-full p-3 border-2 border-gray-200 rounded-lg" placeholder="STD. 2,300 RPM"></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Lubricating Oil Pressure / แรงดันของน้ำมันหล่อลื่น (STD.250-750Kpa)</label><input type="number" name="entry.1301900075" class="form-input w-full p-3 border-2 border-gray-200 rounded-lg" placeholder="STD. 250-750Kpa"></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Lubricating Oil Temperature /อุณหภูมิของน้ำมันหล่อลื่น( °C)</label><input type="number" name="entry.1118394468" class="form-input w-full p-3 border-2 border-gray-200 rounded-lg" placeholder="หน่วย °C"></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Cooling Water Pressure / แรงดันของน้ำระบายความร้อน ( °C)</label><input type="number" name="entry.278367378" class="form-input w-full p-3 border-2 border-gray-200 rounded-lg" placeholder="หน่วย °C"></div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Cooling Water Temperature / อุณภูมิของน้ำระบายความร้อน(STD. 80-100 °C)</label><input type="number" name="entry.1127101964" class="form-input w-full p-3 border-2 border-gray-200 rounded-lg" placeholder="STD. 80-100 °C"></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">แรงดันน้ำในท่อส่งน้ำดับเพลิงที่เครื่องยนต์เริ่มทำงาน (STD. 99 psi)</label><input type="number" name="entry.797055912" class="form-input w-full p-3 border-2 border-gray-200 rounded-lg" placeholder="STD. 99 psi"></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">แรงดันน้ำในท่อส่งน้ำดับเพลิงขณะเครื่องยนต์ทำงาน (STD. 120 psi)</label><input type="number" name="entry.1506477567" class="form-input w-full p-3 border-2 border-gray-200 rounded-lg" placeholder="STD. 120 psi"></div>
+                    </div>
+                </div>
+
+                <div class="section-card bg-white rounded-2xl p-6 mb-6 shadow-lg">
+                    <div class="section-header border-b-2 border-gray-100 pb-3 mb-5"><h2 class="section-title text-xl font-bold text-gray-800">💡 สถานะระบบ</h2></div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">การทำงานของไฟแสดงผล</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1316882575" value="ไฟติดครบ"><label>ไฟติดครบ</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1316882575" value="ไฟติดไม่ครบ"><label>ไฟติดไม่ครบ</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="ไฟแสดงผลOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.1316882575" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="ไฟแสดงผลOther" name="entry.1316882575.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Check Vibrations / ตรวจเช็คการสั่นของเครื่องยนต์</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.628997006" value="ปกติ"><label>ปกติ</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.628997006" value="ผิดปกติ(เครื่องสั่นมาก)"><label>ผิดปกติ</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="vibrationsOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.628997006" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="vibrationsOther" name="entry.628997006.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Check All Moving Parts For Abnormal Sounds / ตรวจเช็คส่วนที่มีการเคลื่อนที่และความผิดปกติของเสียง </label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1209254361" value="ไม่มีเสียงผิดปกติ"><label>ปกติ</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1209254361" value="มีเสียงผิดปกติ"><label>ผิดปกติ</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="soundsOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.1209254361" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="soundsOther" name="entry.1209254361.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                    </div>
+                    <div class="form-group mt-4"><label class="form-label font-semibold text-gray-700 block mb-2">Flow Switch / การทำงานของสวิทช์</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.950605992" value="ทำงานปกติ"><label>ทำงานปกติ</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.950605992" value="ทำงานผิดปกติ"><label>ทำงานผิดปกติ</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="flowSwitchOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.950605992" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="flowSwitchOther" name="entry.950605992.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                </div>
+
+                <div class="section-card bg-white rounded-2xl p-6 mb-6 shadow-lg">
+                    <div class="section-header border-b-2 border-gray-100 pb-3 mb-5"><h2 class="section-title text-xl font-bold text-gray-800">📊 การวัดเพิ่มเติม</h2></div>
+                    <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">การทดสอบ Jocky Pump เปิดวาล์วลดแรงดันน้ำในระบบท่อส่งน้ำดับเพลิง บันทึกแรงดันปั๊มทำงานงาน(psi)</label><input type="number" name="entry.700036978" class="form-input w-full p-3 border-2 border-gray-200 rounded-lg" placeholder="..."></div>
+                    <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">การทดสอบ Jocky Pump เปิดวาล์วลดแรงดันน้ำในระบบท่อส่งน้ำดับเพลิง บันทึกแรงดันปั๊มหยุดทำงาน(psi)</label><input type="number" name="entry.174910325" class="form-input w-full p-3 border-2 border-gray-200 rounded-lg" placeholder="..."></div>
+                    <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">การทดสอบ Engine Fire Pump  ปิดสวิทช์ควบคุม Jocky Pumpเปิดวาล์วลดแรงดันน้ำในระบบท่อส่งน้ำดับเพลิง บันทึกแรงดันเครื่องยนต์ทำงาน(psi)</label><input type="number" name="entry.2077235529" class="form-input w-full p-3 border-2 border-gray-200 rounded-lg" placeholder="..."></div>
+                    <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">การทดสอบ Engine Fire Pump  ปิดสวิทช์ควบคุม Jocky Pumpเปิดวาล์วลดแรงดันน้ำในระบบท่อส่งน้ำดับเพลิง บันทึกแรงดันสูงสุด(psi)</label><input type="number" name="entry.491301014" class="form-input w-full p-3 border-2 border-gray-200 rounded-lg" placeholder="..."></div>
+                </div>
+
+                <div class="section-card bg-white rounded-2xl p-6 mb-6 shadow-lg">
+                    <div class="section-header border-b-2 border-gray-100 pb-3 mb-5"><h2 class="section-title text-xl font-bold text-gray-800">🔨 กิจกรรมการบำรุงรักษา</h2></div>
+                    <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">General Cleaning/ทำความสะอาดทั่วไป (STD.ทำความสะอาด)</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1459189432" value="ทำความสะอาด"><label>ทำความสะอาด</label></div></div></div>
+                    <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">V Belts Condition/ตรวจเช็คการทำงานของสายพาน(STD.ปกติหรือฉีกขาด)</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.764561274" value="ปกติ"><label>ปกติ</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.764561274" value="ฉีกขาด"><label>ฉีกขาด</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="vbeltMaintOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.764561274" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="vbeltMaintOther" name="entry.764561274.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                    <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Record Running Hours/บันทึกจำนวนเวลาที่ทำงาน(STD.Hour)</label><input type="number" name="entry.1309858519" class="form-input w-full p-3 border-2 border-gray-200 rounded-lg" placeholder="หน่วย Hour"></div>
+                    <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Battery Charging Volt./แรงดันการชาร์จแบตเตอรี่(STD.ไม่ต่ำกว่า12v.)</label><input type="number" name="entry.1833812342" class="form-input w-full p-3 border-2 border-gray-200 rounded-lg" step="0.1" placeholder="STD. ไม่ต่ำกว่า 12v"></div>
+                    <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Test Battery/ทดสอบแบตเตอรี่(STD.ไม่ต่ำกว่า12VDC)</label><input type="number" name="entry.1502505224" class="form-input w-full p-3 border-2 border-gray-200 rounded-lg" step="0.1" placeholder="STD. ไม่ต่ำกว่า 12VDC"></div>
+                    <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Change Ludricating Oil/เปลี่ยนถ่ายน้ำมันหล่อลื่น(STD.ว/ด/ป)</label><input type="date" name="entry.376703834" class="form-input w-full p-3 border-2 border-gray-200 rounded-lg"></div>
+                    <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Change Ludricating Oil Filter/เปลี่ยนถ่ายกรองน้ำมันหล่อลื่น(STD.ว/ด/ป)</label><input type="date" name="entry.550562469" class="form-input w-full p-3 border-2 border-gray-200 rounded-lg"></div>
+                    <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Change Air Filter/เปลี่ยนใส้กรองอากาศ(STD.ว/ด/ป)</label><input type="date" name="entry.964740712" class="form-input w-full p-3 border-2 border-gray-200 rounded-lg"></div>
+                </div>
+
+                <div class="section-card bg-white rounded-2xl p-6 mb-6 shadow-lg">
+                    <div class="section-header border-b-2 border-gray-100 pb-3 mb-5"><h2 class="section-title text-xl font-bold text-gray-800">⚡ ระบบไฟฟ้า</h2></div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Inspection For Any Sign Of Wburnmarks,Oxidation,Abnormal Hissing Sound & Smell/ตรวจสอบความผิดปกติของเสียงและกลิ่น(STD.เสียงดัง/ไม่เหม็น)</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1952860784" value="ปกติ"><label>ปกติ</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1952860784" value="ผิดปกติ"><label>ผิดปกติ</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="sound_smellOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.1952860784" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="sound_smellOther" name="entry.1952860784.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Check Status Of All Indication/ตรวจเช็คสภาพของ Indicator ต่างๆของ Circuit Brecaker(STD.ใช้งานได้)</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1304076428" value="ใช้งานได้"><label>ใช้งานได้</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1304076428" value="ผิดปกติ"><label>ผิดปกติ</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="indicatorOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.1304076428" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="indicatorOther" name="entry.1304076428.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Check For General Operation & Condition/ตรวจสอบสภาพและการทำงานทั่วไป(STD.ใช้งานได้)</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1601277291" value="ใช้งานได้"><label>ใช้งานได้</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1601277291" value="ผิดปกติ"><label>ผิดปกติ</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="generalOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.1601277291" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="generalOther" name="entry.1601277291.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Check Casing Condition/ตรวจสอบสภาพโครงสร้างของอุปกรณ์(STD.ใช้งานได้)</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.851234898" value="ใช้งานได้"><label>ใช้งานได้</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.851234898" value="ผิดปกติ"><label>ผิดปกติ</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="casingOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.851234898" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="casingOther" name="entry.851234898.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Dedusting/ทำการทำความสะอาดภายนอกตามจุดต่างๆที่มีฝุ่นละออง(STD.ทำความสะอาด)</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.362638249" value="ทำความสะอาด"><label>ทำความสะอาด</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="dustOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.362638249" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="dustOther" name="entry.362638249.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Body,Cubicle&Racking Cleaning / ทำความสะอาดภายในและชิ้นส่วนเมคคานิคต่าง ๆ(STD.ทำความสะอาด)</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1151340514" value="ทำความสะอาด"><label>ทำความสะอาด</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="bodyOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.1151340514" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="bodyOther" name="entry.1151340514.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Insulation Resistance Test & Grounding Checked / ตรวจสอบฉนวนและกราวด์(STD.ปกติหรือเสื่อมสภาพ)</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1956843408" value="ปกติ"><label>ปกติ</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1956843408" value="เสื่อมสภาพ"><label>เสื่อมสภาพ</label></div></div></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Tightening Of All Electrical Connection / ตรวจขันน๊อตล็อกขั้วสายไฟและจุดต่อต่างๆ (STD.ขันแน่น)</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1745325661" value="ขันแน่น"><label>ขันแน่น</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1745325661" value="ผิดปกติ"><label>ผิดปกติ</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="tightenOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.1745325661" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="tightenOther" name="entry.1745325661.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Lubricate Mechanical Parts / ทำการหล่อลื่นตามชิ้นส่วนแมคคานิคต่าง ๆ(STD.ไม่มีในระบบ)</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1547716680" value="ไม่มีในระบบ"><label>ไม่มีในระบบ</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="lubricateOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.1547716680" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="lubricateOther" name="entry.1547716680.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                    </div>
+                </div>
+
+                <div class="section-card bg-white rounded-2xl p-6 mb-6 shadow-lg">
+                    <div class="section-header border-b-2 border-gray-100 pb-3 mb-5"><h2 class="section-title text-xl font-bold text-gray-800">🛡️ ความปลอดภัยและการป้องกัน</h2></div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Check All Safety Devices / ตรวจสอบอุปกรณ์ระบบความปลอดภัย(STD.พร้อมใช้งาน)</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.498232465" value="พร้อมใช้งาน"><label>พร้อมใช้งาน</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.498232465" value="ไม่พร้อมใช้งาน"><label>ไม่พร้อมใช้งาน</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="safetyOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.498232465" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="safetyOther" name="entry.498232465.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Check Fuses & Protection Device / ตรวจสอบฟิวส์และอุปกรณ์ป้องกันต่าง ๆ(STD.พร้อมใช้งาน)</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1443945119" value="พร้อมใช้งาน"><label>พร้อมใช้งาน</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1443945119" value="ไม่พร้อมใช้งาน"><label>ไม่พร้อมใช้งาน</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="fusesOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.1443945119" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="fusesOther" name="entry.1443945119.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Tightening Busbar Supports / ตรวจน๊อตยึดแท่งบัสบาร์(STD.ไม่มีในระบบ)</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.614621971" value="ไม่มีในระบบ"><label>ไม่มีในระบบ</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="busbarOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.614621971" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="busbarOther" name="entry.614621971.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Check Communication for Building Automation System/ตรวจสอบการทำงานในสภาวะต่างๆ ในระบบอาคารอัติโนมัติ(STD.ใช้งานได้)</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.569091221" value="ใช้งานได้"><label>ใช้งานได้</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.569091221" value="ไม่พร้อมใช้งาน"><label>ไม่พร้อมใช้งาน</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="buildingOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.569091221" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="buildingOther" name="entry.569091221.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Check Communication for RUUor DDC to Building Automation System and Cleaning/ตรวจสอบการสื่อสารระหว่างอุปกรณ์ต่อพ่วงกับระบบอาคารอัตโนมัติพร้อมทั้งทำความสะอาด(STD.ทำความสะอาด)</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.673310831" value="ทำความสะอาด"><label>ทำความสะอาด</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="commOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.673310831" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="commOther" name="entry.673310831.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Check Status Lamp Show for Annuciator Panel/ตรวจสอบหลอดไฟแสดงการทำงานในสภาวะต่าง ๆ(STD.ไฟติดครบ)</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1022996900" value="ไฟติดครบ"><label>ไฟติดครบ</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="lampOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.1022996900" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="lampOther" name="entry.1022996900.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                    </div>
+                    <div class="form-group mt-4"><label class="form-label font-semibold text-gray-700 block mb-2">Record Voltage / บันทึกค่าแรงดัน(STD.ไม่ต่ำกว่า 12v)</label><input type="number" name="entry.209108764" class="form-input w-full p-3 border-2 border-gray-200 rounded-lg" step="0.1" placeholder="STD. ไม่ต่ำกว่า 12v"></div>
+                </div>
+                
+                <div class="section-card bg-white rounded-2xl p-6 mb-6 shadow-lg">
+                    <div class="section-header border-b-2 border-gray-100 pb-3 mb-5"><h2 class="section-title text-xl font-bold text-gray-800">📝 ปัญหาและข้อเสนอแนะ</h2></div>
+                    <div class="grid grid-cols-1 gap-6">
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">ISSUE</label><p class="helper-text">ปัญหาที่พบ หากไม่พบปัญหาไม่ต้องกรอกข้อมูล</p><textarea name="entry.129342865" class="form-input w-full p-3 border-2 border-gray-200 rounded-lg" rows="4" placeholder="อธิบายปัญหาที่พบ..."></textarea></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">CONDITION</label><p class="helper-text">แนวทางการแก้ไขปัญหา(หากไม่มีปัญหาไม่ต้องกรอกข้อมูล)</p><textarea name="entry.690163791" class="form-input w-full p-3 border-2 border-gray-200 rounded-lg" rows="4" placeholder="อธิบายวิธีการแก้ไขปัญหา..."></textarea></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">HISTORY RECCORD</label><p class="helper-text">บันทึกประวัติการแก้ไข</p><textarea name="entry.788703385" class="form-input w-full p-3 border-2 border-gray-200 rounded-lg" rows="3" placeholder="บันทึกประวัติการซ่อมแซม..."></textarea></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">วันตรวจเช็ครอบถัดไป</label><input type="date" name="entry.298726690" class="form-input w-full p-3 border-2 border-gray-200 rounded-lg"></div>
+                    </div>
+                </div>
+                
+                <div class="action-buttons flex flex-wrap justify-center items-center gap-4 my-8 py-6 border-t-2 border-gray-200 sticky bottom-0 bg-white/80 backdrop-blur-sm z-10">
+                    <button type="button" onclick="analyzeWithAI()" class="btn theme-gradient-bg text-white font-bold py-3 px-6 rounded-lg shadow-md flex items-center gap-2">🤖 วิเคราะห์ด้วย AI</button>
+                    <button type="button" onclick="previewAnswers()" class="btn bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-lg shadow-md">🔍 ตรวจสอบคำตอบ</button>
+                    <button type="submit" class="btn bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-3 px-6 rounded-lg shadow-md flex items-center justify-center gap-2">📤 ส่งรายงาน</button>
+                    <button type="button" onclick="resetForm()" class="btn bg-pink-500 hover:bg-pink-600 text-white font-bold py-3 px-6 rounded-lg shadow-md">🔄 รีเซ็ตแบบฟอร์ม</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;" onload="handleFormSubmitted()"></iframe>
+
+    <dialog id="previewDialog" class="rounded-2xl shadow-xl p-0 w-11/12 max-w-2xl"></dialog>
+    <dialog id="aiDialog" class="rounded-2xl shadow-xl p-0 w-11/12 max-w-2xl"></dialog>
+
+    <script>
+        // --- SCRIPT START ---
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzpKavLhCGZTy1v4StlAdAEQIHDhD92oWngAxzHFDPkxaGTN9AyayPtL0vO4gyqxkL2qw/exec"; 
+
+        // --- Login Logic ---
+        const loginDialog = document.getElementById('loginDialog');
+        const loginForm = document.getElementById('loginForm');
+        const loginButton = document.getElementById('loginButton');
+        const loginError = document.getElementById('loginError');
+        const mainContent = document.getElementById('mainContent');
+
+        loginDialog.showModal();
+        loginDialog.addEventListener('cancel', (e) => e.preventDefault());
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            loginError.textContent = '';
+            loginButton.innerHTML = '<div class="spinner"></div><span class="ml-2">กำลังตรวจสอบ...</span>';
+            loginButton.disabled = true;
+
+            const username = loginForm.username.value;
+            const password = loginForm.password.value;
+
+            try {
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'cors',
+                    redirect: 'follow',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    loginDialog.close();
+                    mainContent.classList.remove('hidden');
+                } else {
+                    loginError.textContent = result.message || 'Login failed.';
+                }
+
+            } catch (error) {
+                loginError.textContent = 'ไม่สามารถเชื่อมต่อได้';
+            } finally {
+                loginButton.innerHTML = '<span>เข้าสู่ระบบ →</span>';
+                loginButton.disabled = false;
+            }
+        });
+
+        // --- Form Functions ---
+        let formSubmitted = false;
+
+        function selectRadio(element) {
+            const radio = element.querySelector('input[type="radio"]');
+            if (radio) {
+                radio.checked = true;
+                const parentGroup = element.closest('.grid, .radio-group');
+                if (parentGroup) {
+                    parentGroup.querySelectorAll('.other-input').forEach(input => input.classList.add('hidden'));
+                }
+                if (element.hasAttribute('data-other-target')) {
+                    const otherInput = document.getElementById(element.getAttribute('data-other-target'));
+                    if (otherInput) {
+                        otherInput.classList.remove('hidden');
+                        otherInput.focus();
+                    }
+                }
+            }
+        }
+
+        function handleSubmit() {
+            formSubmitted = true;
+            const submitButton = document.querySelector('button[type="submit"]');
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<div class="spinner"></div><span class="ml-2">กำลังส่ง...</span>';
+            return true;
+        }
+
+        function handleFormSubmitted() {
+            if (formSubmitted) {
+                alert('ส่งรายงานสำเร็จ!');
+                const submitButton = document.querySelector('button[type="submit"]');
+                submitButton.disabled = false;
+                submitButton.innerHTML = '📤 ส่งรายงาน';
+                resetForm(true);
+                formSubmitted = false; 
+            }
+        }
+        
+        function resetForm(force = false) {
+            if (force || confirm('คุณต้องการล้างข้อมูลในฟอร์มทั้งหมดใช่หรือไม่?')) {
+                document.getElementById('inspectionForm').reset();
+                document.querySelectorAll('.other-input').forEach(input => input.classList.add('hidden'));
+            }
+        }
+
+        function previewAnswers() {
+            const dialog = document.getElementById('previewDialog');
+            let contentHTML = '';
+            
+            const form = document.getElementById('inspectionForm');
+            const formData = new FormData(form);
+            let count = 0;
+
+            const labelMap = new Map();
+            form.querySelectorAll('.form-group').forEach(group => {
+                const label = group.querySelector('.form-label');
+                if(label){
+                    group.querySelectorAll('input, textarea').forEach(input => {
+                        if(input.name) labelMap.set(input.name, label.textContent.split('/')[0].trim());
+                    });
+                }
+            });
+
+            contentHTML += '<ul class="list-none space-y-3">';
+            for (const [name, value] of formData.entries()) {
+                if (value && value !== '__other_option__') {
+                    let labelText = labelMap.get(name) || name;
+                    if (name.includes('.other_option_response')) {
+                         const baseName = name.replace('.other_option_response', '');
+                         labelText = (labelMap.get(baseName) || baseName) + " (อื่นๆ)";
+                    }
+                    contentHTML += `<li class="border-b pb-2"><strong class="text-indigo-600">${labelText}:</strong><br><span class="pl-2">${value}</span></li>`;
+                    count++;
+                }
+            }
+            contentHTML += '</ul>';
+
+            if (count === 0) {
+                contentHTML = '<p class="text-center text-gray-500">ยังไม่มีการกรอกข้อมูล</p>';
+            }
+
+            dialog.innerHTML = `<div class="p-6">
+                <div class="flex justify-between items-center border-b pb-3 mb-4">
+                    <h2 class="text-2xl font-bold theme-gradient-text">พรีวิวคำตอบ</h2>
+                    <button onclick="this.closest('dialog').close()" class="text-2xl font-bold text-gray-500 hover:text-gray-800">&times;</button>
+                </div>
+                <div id="previewContent" class="space-y-2 text-gray-700 max-h-[70vh] overflow-y-auto">${contentHTML}</div>
+            </div>`;
+            dialog.showModal();
+        }
+
+        function analyzeWithAI() {
+            const dialog = document.getElementById('aiDialog');
+            
+            dialog.innerHTML = `<div class="p-6">
+                <div class="flex justify-between items-center border-b pb-3 mb-4">
+                    <h2 class="text-2xl font-bold theme-gradient-text">🤖 ผลการวิเคราะห์ด้วย AI</h2>
+                    <button onclick="this.closest('dialog').close()" class="text-2xl font-bold text-gray-500 hover:text-gray-800">&times;</button>
+                </div>
+                <div id="aiLoading" class="text-center py-8">
+                    <div class="spinner mx-auto" style="width:40px; height:40px; border-width:4px;"></div>
+                    <p class="text-gray-500 mt-4">กำลังประมวลผลข้อมูล... กรุณารอสักครู่</p>
+                </div>
+                <div id="aiResult" class="hidden space-y-4 max-h-[70vh] overflow-y-auto"></div>
+            </div>`;
+
+            const loadingDiv = document.getElementById('aiLoading');
+            const resultDiv = document.getElementById('aiResult');
+            
+            loadingDiv.style.display = 'block';
+            resultDiv.classList.add('hidden');
+            dialog.showModal();
+
+            const form = document.getElementById('inspectionForm');
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
+
+            setTimeout(() => {
+                const analysisHTML = generateAiAnalysis(data);
+                resultDiv.innerHTML = analysisHTML;
+                loadingDiv.style.display = 'none';
+                resultDiv.classList.remove('hidden');
+            }, 2500);
+        }
+
+        function generateAiAnalysis(data) {
+            let summary = '<div><h3 class="text-lg font-bold text-gray-800 mb-2">📋 สรุปข้อมูลสำคัญ</h3><ul class="list-disc list-inside text-sm text-gray-700">';
+            let fixes = '<div><h3 class="text-lg font-bold text-gray-800 mt-4 mb-2">🔴 วิธีแก้ไขปัญหาเร่งด่วน</h3><ul class="list-disc list-inside text-sm">';
+            let recommendations = '<div><h3 class="text-lg font-bold text-gray-800 mt-4 mb-2">🟡 ข้อเสนอแนะเพิ่มเติม</h3><ul class="list-disc list-inside text-sm">';
+            let fixCount = 0;
+            let recCount = 0;
+
+            if(data['entry.1618028324']) summary += `<li>ระดับน้ำมันหล่อลื่น: <strong>${data['entry.1618028324']}</strong></li>`;
+            if(data['entry.14334317']) summary += `<li>ระดับน้ำระบายความร้อน: <strong>${data['entry.14334317']} ${data['entry.14334317.other_option_response'] || ''}</strong></li>`;
+            if(data['entry.1502505224']) summary += `<li>แรงดันทดสอบแบตเตอรี่: <strong>${data['entry.1502505224']} VDC</strong></li>`;
+            if(data['entry.323305993'] === 'รั่วไหล') summary += `<li class="text-red-600"><strong>พบการรั่วไหลของน้ำมันเชื้อเพลิง</strong></li>`;
+            summary += '</ul></div>';
+
+            if(data['entry.1618028324'] === 'ต่ำ') {
+                fixes += '<li class="text-red-700"><strong>ระดับน้ำมันหล่อลื่นต่ำ:</strong> ควรเติมน้ำมันหล่อลื่นให้อยู่ในระดับที่ถูกต้องทันทีก่อนเดินเครื่อง เพื่อป้องกันความเสียหายร้ายแรงต่อเครื่องยนต์</li>';
+                fixCount++;
+            }
+            if(data['entry.323305993'] === 'รั่วไหล' || data['entry.1072480311'] === 'รั่วไหล' || data['entry.1607591057'] === 'รั่วไหล') {
+                fixes += '<li class="text-red-700"><strong>พบการรั่วไหล:</strong> เป็นปัญหาด้านความปลอดภัยร้ายแรง ควรหยุดใช้งานและตรวจสอบหาจุดรั่ว (น้ำมันเชื้อเพลิง/หล่อลื่น/น้ำหล่อเย็น) เพื่อทำการซ่อมแซมโดยด่วน</li>';
+                fixCount++;
+            }
+             if(parseFloat(data['entry.1502505224']) < 12 && data['entry.1502505224'] !== '') {
+                fixes += `<li class="text-red-700"><strong>แบตเตอรี่อาจเสื่อมสภาพ (วัดได้ ${data['entry.1502505224']} VDC):</strong> แรงดันต่ำกว่ามาตรฐาน อาจทำให้เครื่องยนต์สตาร์ทไม่ติดเมื่อเกิดเหตุฉุกเฉิน ควรพิจารณาเปลี่ยนแบตเตอรี่ลูกใหม่</li>`;
+                fixCount++;
+            }
+             if(data['entry.628997006'] === 'ผิดปกติ(เครื่องสั่นมาก)') {
+                fixes += '<li class="text-red-700"><strong>เครื่องยนต์สั่นผิดปกติ:</strong> อาจเกิดจากแท่นเครื่องชำรุดหรือปัญหาภายในเครื่องยนต์ ควรให้ช่างผู้ชำนาญตรวจสอบเพื่อป้องกันความเสียหายเพิ่มเติม</li>';
+                fixCount++;
+            }
+
+            if(parseFloat(data['entry.964120987']) < 100 && data['entry.964120987'] !== '') {
+                 recommendations += `<li><strong>ระดับเชื้อเพลิง (${data['entry.964120987']} ลิตร):</strong> อยู่ในระดับที่ใช้งานได้ แต่แนะนำให้วางแผนการเติมให้อยู่ในระดับที่พร้อมใช้งานเสมอ (มากกว่า 80% ของถัง)</li>`;
+                 recCount++;
+            }
+            if(data['entry.719816448'] === 'น็อตไม่แน่น') {
+                recommendations += '<li><strong>พบสลักและน็อตไม่แน่น:</strong> ควรกวดขันน็อตในจุดสำคัญต่างๆ ให้แน่น เพื่อลดการสั่นสะเทือนและป้องกันการชำรุดของอุปกรณ์</li>';
+                recCount++;
+            }
+            if(data['entry.1182164809'] === 'ไส้กรองตัน') {
+                recommendations += '<li><strong>ไส้กรองอากาศตัน:</strong> อาจทำให้เครื่องยนต์ทำงานได้ไม่เต็มประสิทธิภาพและสิ้นเปลืองเชื้อเพลิง ควรทำความสะอาดหรือเปลี่ยนไส้กรองใหม่</li>';
+                recCount++;
+            }
+
+            if (fixCount === 0) fixes = '<div><h3 class="text-lg font-bold text-gray-800 mt-4 mb-2">🔴 วิธีแก้ไขปัญหาเร่งด่วน</h3><p class="text-green-600 font-semibold">✅ ไม่พบปัญหาเร่งด่วนที่ต้องแก้ไขทันที</p></div>';
+            else fixes += '</ul></div>';
+            
+            if (recCount === 0) recommendations = '<div><h3 class="text-lg font-bold text-gray-800 mt-4 mb-2">🟡 ข้อเสนอแนะเพิ่มเติม</h3><p class="font-semibold">✅ ระบบโดยรวมอยู่ในเกณฑ์ดี ไม่มีข้อเสนอแนะเพิ่มเติม</p></div>';
+            else recommendations += '</ul></div>';
+
+            let others = '<div><h3 class="text-lg font-bold text-gray-800 mt-4 mb-2">🔍 รายการที่ต้องตรวจสอบเพิ่มเติม (อื่นๆ)</h3><ul class="list-disc list-inside text-sm">';
+            let otherCount = 0;
+            const form = document.getElementById('inspectionForm');
+
+            form.querySelectorAll('input[name$=".other_option_response"]').forEach(input => {
+                if (input.value) {
+                    const formGroup = input.closest('.form-group');
+                    let labelText = 'ไม่พบหัวข้อ';
+                    if (formGroup) {
+                        const label = formGroup.querySelector('.form-label');
+                        if (label) {
+                            labelText = label.textContent.trim();
+                        }
+                    }
+                    others += `<li class="text-blue-700"><strong>${labelText}:</strong> ${input.value}</li>`;
+                    otherCount++;
+                }
+            });
+
+            if (otherCount === 0) {
+                others = '';
+            } else {
+                others += '</ul></div>';
+            }
+
+            return summary + fixes + recommendations + others;
+        }
+    </script>
+</body>
+</html>
