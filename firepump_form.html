@@ -3,106 +3,422 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบตรวจสอบอัจฉริยะ Fire Pump & Engine</title>
+    <title>ระบบตรวจสอบเครื่องยนต์สูบน้ำดับเพลิง</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
         * { font-family: 'Sarabun', sans-serif; scroll-behavior: smooth; }
-        body { background-color: #f0f4f8; }
-        .theme-header { background-color: #1e293b; }
-        .theme-accent { color: #14b8a6; }
-        .theme-accent-radio { accent-color: #14b8a6; }
+        
+        body {
+            background-color: #f0f4f8;
+            background-image: url('background.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            transition: background-image 0.5s ease-in-out;
+        }
+
+        body.loggedin {
+            background-image: linear-gradient(to right, #e0c3fc 0%, #8ec5fc 100%);
+        }
+
+        .theme-gradient-bg { background: linear-gradient(135deg, #86efac 0%, #38bdf8 50%, #6366f1 100%); }
+        .theme-gradient-text { background: linear-gradient(135deg, #4ade80 0%, #0ea5e9 50%, #4f46e5 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .theme-accent-color { accent-color: #0ea5e9; }
+        
+        .header-gradient-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
         .radio-item:has(input[type="radio"]:checked),
-        .radio-item-other:has(input[type="radio"]:checked) {
-            background-color: #f0fdfa; border-color: #14b8a6;
-            box-shadow: 0 0 0 2px hsla(173, 82%, 41%, 0.3);
-        }
-        dialog { transition: opacity 0.3s ease-out, transform 0.3s ease-out; }
-        dialog[open] { opacity: 1; transform: scale(1); }
+        .radio-item-other:has(input[type="radio"]:checked) { background-color: #f0f9ff; border-color: #0ea5e9; }
+        
         dialog::backdrop {
-            background: rgba(30, 41, 59, 0.4); backdrop-filter: blur(8px);
-            transition: opacity 0.3s ease-out, backdrop-filter 0.3s ease-out;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
         }
-        .spinner { border: 3px solid #e2e8f0; border-top: 3px solid #14b8a6; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
+
+        .spinner { border: 3px solid #f3f4f6; border-top: 3px solid #3b82f6; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .btn {
-            transition: all 0.2s ease-in-out; border-radius: 0.5rem; font-weight: 600;
-            padding: 0.75rem 1.5rem; display: inline-flex; align-items: center;
-            justify-content: center; gap: 0.5rem;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        
+        .btn { transition: all 0.3s ease; }
+        .btn:hover { transform: translateY(-3px) scale(1.03); box-shadow: 0 6px 20px rgba(0,0,0,0.15); }
+        .helper-text { font-size: 0.875rem; color: #6b7280; margin-bottom: 8px; }
+
+        .form-input, .form-select {
+            transition: all 0.3s ease;
         }
-        .btn:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -2px rgb(0 0 0 / 0.1); }
-        .btn-ai { background-color: #14b8a6; color: white; }
-        .btn-ai:hover { background-color: #0d9488; }
-        .btn-submit { background-color: #4338ca; color: white; }
-        .btn-submit:hover { background-color: #3730a3; }
-        .btn-preview { background-color: #e2e8f0; color: #1e293b; }
-        .btn-preview:hover { background-color: #cbd5e1; }
-        .btn-reset { background-color: #be123c; color: white; }
-        .btn-reset:hover { background-color: #9f1239; }
-        .form-input { border: 1px solid #cbd5e1; border-radius: 0.5rem; transition: all 0.2s ease; }
-        .form-input:focus { outline: none; border-color: #14b8a6; box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.3); }
-        .input-ok { border-color: #10b981 !important; background-color: #ecfdf5 !important; }
-        .input-warning { border-color: #f59e0b !important; background-color: #fffbeb !important; }
-        .input-critical { border-color: #ef4444 !important; background-color: #fef2f2 !important; }
-        #loginDialog { max-width: 400px; border-radius: 1rem; overflow: hidden; border: none; padding: 0; box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25); }
-        .label-required::after { content: ' *'; color: #ef4444; }
-        .helper-text { font-size: 0.875rem; color: #64748b; margin-bottom: 8px; }
+        .form-input:focus, .form-select:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+            outline: none;
+        }
+
+        #loginDialog {
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            padding: 0;
+            max-width: 400px;
+            overflow: hidden;
+        }
+
+        #loginDialog .dialog-header {
+            background: linear-gradient(135deg, #2dd4bf, #3b82f6, #8b5cf6);
+            padding: 2rem;
+            text-align: center;
+            color: white;
+        }
+
+        #loginDialog .dialog-header h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+        }
+
+        #loginDialog .dialog-header p { opacity: 0.9; }
+        #loginDialog .dialog-header .icon { font-size: 3rem; margin-bottom: 0.5rem; display: block; }
+        #loginDialog .dialog-body { padding: 2.5rem; }
+
         .cute-mechanic-img {
-            max-width: 120px; margin: -80px auto 1.5rem; display: block; background: white;
-            border-radius: 50%; padding: 5px; box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-            position: relative; z-index: 10;
+            max-width: 120px;
+            margin: -80px auto 1.5rem;
+            display: block;
+            background: white;
+            border-radius: 50%;
+            padding: 5px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            position: relative;
+            z-index: 10;
+        }
+
+        #loginDialog .form-input {
+            border-radius: 0.75rem;
+            border: 1px solid #d1d5db;
+            padding: 0.8rem 1rem;
+            font-size: 1rem;
+            background-color: white;
+            transition: all 0.2s ease;
+        }
+        
+        #loginDialog .form-input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+            outline: none;
+        }
+        
+        #loginDialog .login-button {
+            background: linear-gradient(45deg, #10b981, #34d399);
+            font-size: 1.1rem;
+            padding: 0.9rem 1.5rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.3);
+            transition: all 0.3s ease;
+            color: white;
+        }
+        
+        #loginDialog .login-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+        }
+
+        #loginError { font-size: 0.9rem; margin-top: 1rem; height: 1.25rem; }
+
+        .section-card {
+            opacity: 0;
+            transform: translateY(25px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+        .section-card.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .ai-response-card {
+            border-radius: 8px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            border-left-width: 5px;
+        }
+        .ai-summary { background-color: #f0f9ff; border-left-color: #0ea5e9; }
+        .ai-critical { background-color: #fef2f2; border-left-color: #ef4444; }
+        .ai-warning { background-color: #fffbeb; border-left-color: #f59e0b; }
+        .ai-recommendation { background-color: #f0fdf4; border-left-color: #22c55e; }
+        .ai-response-card h3 { 
+            font-size: 1.1rem;
+            font-weight: 700; 
+            margin-bottom: 0.75rem; 
+            color: #1f2937;
+            display: flex;
+            align-items: center;
+        }
+        .ai-response-card ul { list-style-type: none; padding-left: 0; }
+        .ai-response-card li { 
+            margin-bottom: 1rem; 
+            padding-left: 1.5rem;
+            position: relative;
+        }
+        .ai-response-card li::before {
+            content: '🔧';
+            position: absolute;
+            left: 0;
+            top: 2px;
+            font-size: 0.9rem;
+        }
+        .ai-response-card .engineering-note {
+            font-size: 0.875rem;
+            color: #4b5563;
+            background-color: rgba(0,0,0,0.03);
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            margin-top: 0.5rem;
+            display: block;
+        }
+
+        .ai-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        #aiDialog .dialog-header-ai {
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 12px;
+            margin-bottom: 16px;
+        }
+        #aiDialog .dialog-header-content {
+            display: flex;
+            align-items: center;
+            flex-grow: 1;
+        }
+        #aiDialog .dialog-header-ai h2 {
+            margin: 0;
+            font-size: 1.5rem;
+            margin-left: 1rem;
         }
     </style>
 </head>
 <body>
 
     <dialog id="loginDialog">
-        <div class="p-8 text-center bg-slate-700 text-white">
-            <i class="fa-solid fa-shield-halved text-5xl mb-3 text-teal-400"></i>
-            <h2 class="text-3xl font-bold">Maintenance Access</h2>
-            <p class="opacity-80">โปรดลงชื่อเข้าสู่ระบบ</p>
+        <div class="dialog-header">
+            <span class="icon">🛠️</span>
+            <h2>เข้าสู่ระบบ</h2>
+            <p>ระบบตรวจสอบเครื่องยนต์ดับเพลิง</p>
         </div>
-        <div class="p-8 bg-white">
+        <div class="dialog-body">
             <img src="mechanic.png" alt="Cute Mechanic" class="cute-mechanic-img">
             <form id="loginForm">
-                <div class="mb-4">
-                    <input type="text" id="username" name="username" class="form-input w-full p-3 text-lg" placeholder="ชื่อผู้ใช้" required>
-                </div>
                 <div class="mb-5">
-                    <input type="password" id="password" name="password" class="form-input w-full p-3 text-lg" placeholder="รหัสผ่าน" required>
+                    <input type="text" id="username" name="username" class="form-input w-full" placeholder="Username" required>
                 </div>
-                <button type="submit" id="loginButton" class="btn bg-teal-500 text-white w-full text-base hover:bg-teal-600">
-                    <i class="fa-solid fa-arrow-right-to-bracket"></i>
-                    <span>เข้าสู่ระบบ</span>
+                <div class="mb-6">
+                    <input type="password" id="password" name="password" class="form-input w-full" placeholder="Password" required>
+                </div>
+                <button type="submit" id="loginButton" class="login-button w-full flex items-center justify-center gap-2">
+                    <span>เข้าสู่ระบบ →</span>
                 </button>
-                <p id="loginError" class="text-red-600 text-center font-semibold h-5 mt-3 text-sm"></p>
+                <p id="loginError" class="text-red-600 text-center font-semibold"></p>
             </form>
         </div>
     </dialog>
     
     <div id="mainContent" class="hidden">
-        <div class="theme-header text-white py-8 mb-8 shadow-xl">
+        <div class="header-container bg-white text-white py-10 mb-8 shadow-xl">
             <div class="container mx-auto px-4 text-center">
-                 <h1 class="text-4xl font-bold tracking-wide"><i class="fa-solid fa-fire-extinguisher theme-accent mr-3"></i>ระบบทดสอบเครื่องยนต์สูบน้ำดับเพลิง</h1>
+                 <h1 class="text-4xl font-bold drop-shadow-lg header-gradient-text">🚒 แบบฟอร์มทดสอบเครื่องยนต์สูบน้ำดับเพลิง</h1>
             </div>
         </div>
 
         <div class="container mx-auto px-4">
             <div class="text-center mb-6 bg-white p-4 rounded-xl shadow-lg">
-                <h2 class="text-2xl font-bold text-slate-800">แผนกช่างซ่อมบำรุง โรงพยาบาลเอกชล 2</h2>
+                <h2 class="text-2xl font-bold text-gray-800">แผนกช่างซ่อมบำรุง โรงพยาบาลเอกชล 2</h2>
             </div>
             
-            <form id="inspectionForm" action="https://docs.google.com/forms/d/e/1FAIpQLSdAp3uUyN7l7SGrMYEp0eCQpxkRd-iMnltaFEhAaLZKvQJF-w/formResponse" method="POST" target="hidden_iframe">
+            <form id="inspectionForm" action="https://docs.google.com/forms/d/e/1FAIpQLSdAp3uUyN7l7SGrMYEp0eCQpxkRd-iMnltaFEhAaLZKvQJF-w/formResponse" method="POST" target="hidden_iframe" onsubmit="handleSubmit()">
                 
-                <div class="sticky bottom-0 z-10 py-4 mt-8 bg-white/90 backdrop-blur-sm rounded-t-2xl shadow-[0_-10px_30px_-15px_rgba(0,0,0,0.1)]">
-                    <div class="container mx-auto px-4 flex flex-wrap justify-center items-center gap-4">
-                        <button type="button" id="analyzeButton" class="btn btn-ai"><i class="fa-solid fa-robot"></i><span>วิเคราะห์ด้วย AI "เมฆา"</span></button>
-                        <button type="button" id="previewButton" class="btn btn-preview"><i class="fa-solid fa-magnifying-glass"></i><span>ตรวจสอบคำตอบ</span></button>
-                        <button type="submit" class="btn btn-submit"><i class="fa-solid fa-paper-plane"></i><span>ส่งรายงาน</span></button>
-                        <button type="button" id="resetButton" class="btn btn-reset"><i class="fa-solid fa-arrow-rotate-left"></i><span>รีเซ็ตฟอร์ม</span></button>
+                <div class="section-card bg-white rounded-2xl p-6 mb-6 shadow-lg">
+                    <div class="section-header border-b-2 border-gray-100 pb-3 mb-5"><h2 class="section-title text-xl font-bold text-gray-800">📋 ข้อมูลพื้นฐาน</h2></div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">วว/ดด/ป</label><input type="date" name="entry.1632403651" class="form-input w-full p-3 border-2 border-gray-200 rounded-lg" required></div>
+                        <div class="form-group">
+                            <label class="form-label font-semibold text-gray-700 block mb-2">ผู้ปฏิบัติงาน</label>
+                            <select id="operatorSelect" name="entry.1231391232" class="form-select w-full p-3 border-2 border-gray-200 rounded-lg bg-white" onchange="handleOperatorChange(this)">
+                                <option value="" disabled selected>-- กรุณาเลือกรายชื่อ --</option>
+                                <option value="ดอน ถาวรวัฒนเจริญ">ดอน ถาวรวัฒนเจริญ</option>
+                                <option value="โชคชัย แดงเจริญสุข">โชคชัย แดงเจริญสุข</option>
+                                <option value="ณิชาภัทร ภาระพงศ์">ณิชาภัทร ภาระพงศ์</option>
+                                <option value="ประเสริฐ ไกรกาจ">ประเสริฐ ไกรกาจ</option>
+                                <option value="เกริกฤทธิ์ คำราพิซ">เกริกฤทธิ์ คำราพิซ</option>
+                                <option value="กิตติพงษ์ สุวรรณพงษ์">กิตติพงษ์ สุวรรณพงษ์</option>
+                                <option value="สหรัฐ อิศรางกูร ณ อยุธยา">สหรัฐ อิศรางกูร ณ อยุธยา</option>
+                                <option value="นภัสกร อรุณโรจน์">นภัสกร อรุณโรจน์</option>
+                                <option value="ชนะชล ดีทน">ชนะชล ดีทน</option>
+                                <option value="อัครพล สะโรบล ณ อยุธยา">อัครพล สะโรบล ณ อยุธยา</option>
+                                <option value="ภานุพงศ์ ธำรงธิติธรรม">ภานุพงศ์ ธำรงธิติธรรม</option>
+                                <option value="อรุณ แก้วสุริยา">อรุณ แก้วสุริยา</option>
+                                <option value="วรวุฒิ บุลาลม">วรวุฒิ บุลาลม</option>
+                                <option value="สุกฤต อิงศรางกูร ณ อยุธยา">สุกฤต อิงศรางกูร ณ อยุธยา</option>
+                                <option value="ทศพร ภูชมศรี">ทศพร ภูชมศรี</option>
+                                <option value="__other_option__">อื่นๆ…</option>
+                            </select>
+                            <input type="text" id="operatorOther" name="entry.1231391232.other_option_response" class="other-input w-full mt-2 p-3 border-2 border-gray-200 rounded-lg hidden" placeholder="ระบุชื่อผู้ปฏิบัติงาน...">
+                        </div>
                     </div>
+                    <div class="form-group mt-4"><label class="form-label font-semibold text-gray-700 block mb-2">PLAN(ความถี่ในการตรวจเช็ค)</label><p class="helper-text">M=เดือนละครั้ง, Y=ปีละครั้ง</p><div class="radio-group flex gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" id="plan1" name="entry.994147210" value="M"><label for="plan1">M</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" id="plan2" name="entry.994147210" value="Y"><label for="plan2">Y</label></div></div></div>
+                </div>
+
+                <div class="section-card bg-white rounded-2xl p-6 mb-6 shadow-lg">
+                    <div class="section-header border-b-2 border-gray-100 pb-3 mb-5"><h2 class="section-title text-xl font-bold text-gray-800">🛢️ ระดับของเหลว</h2></div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Lubricating Oil Level / ระดับน้ำมันหล่อลื่น</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1618028324" value="สูง"><label>สูง</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1618028324" value="กลาง"><label>กลาง</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1618028324" value="ต่ำ"><label>ต่ำ</label></div></div></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Cooling Water Level / ระดับน้ำระบายความร้อน</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.14334317" value="สูง"><label>สูง</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.14334317" value="กลาง"><label>กลาง</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.14334317" value="ต่ำ"><label>ต่ำ</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="waterOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.14334317" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="waterOther" name="entry.14334317.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Battery Distilled Water Level / ระดับน้ำกลั่นของแบตเตอรี่</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1091386807" value="สูง"><label>สูง</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1091386807" value="กลาง"><label>กลาง</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1091386807" value="ต่ำ"><label>ต่ำ</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="batteryOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.1091386807" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="batteryOther" name="entry.1091386807.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                    </div>
+                    <div class="form-group mt-4"><label class="form-label font-semibold text-gray-700 block mb-2">Fuel Tank Level / ระดับเชื้อเพลิงในถัง(ลิตร)</label><input type="number" name="entry.964120987" class="form-input w-full p-3 border-2 border-gray-200 rounded-lg" min="0" placeholder="กรอกปริมาณเชื้อเพลิง"></div>
+                </div>
+
+                <div class="section-card bg-white rounded-2xl p-6 mb-6 shadow-lg">
+                    <div class="section-header border-b-2 border-gray-100 pb-3 mb-5"><h2 class="section-title text-xl font-bold text-gray-800">💧 การตรวจสอบการรั่วไหล</h2></div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Fuel Oil Leaks / การรั่วไหลของน้ำมันเชื้อเพลิง</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.323305993" value="ปกติ"><label>ปกติ</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.323305993" value="รั่วไหล"><label>รั่วไหล</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="fuelLeakOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.323305993" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="fuelLeakOther" name="entry.323305993.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Lubricating Oil Leaks / การรั่วไหลของน้ำมันหล่อลื่น</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1072480311" value="ปกติ"><label>ปกติ</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1072480311" value="รั่วไหล"><label>รั่วไหล</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="lubLeakOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.1072480311" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="lubLeakOther" name="entry.1072480311.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Cooling Water Leaks / การรั่วไหลของน้ำระบายความร้อน</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1607591057" value="ปกติ"><label>ปกติ</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1607591057" value="รั่วไหล"><label>รั่วไหล</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="coolLeakOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.1607591057" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="coolLeakOther" name="entry.1607591057.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                    </div>
+                </div>
+
+                <div class="section-card bg-white rounded-2xl p-6 mb-6 shadow-lg">
+                    <div class="section-header border-b-2 border-gray-100 pb-3 mb-5"><h2 class="section-title text-xl font-bold text-gray-800">🔧 ชิ้นส่วนเครื่องกล</h2></div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Tightness Of Bolts And Nuts / ตรวจเช็คสภาพของสลักและน๊อต</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.719816448" value="น็อตขันแน่นปกติ"><label>น็อตขันแน่นปกติ</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.719816448" value="น็อตไม่แน่น"><label>น็อตไม่แน่น</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="boltsOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.719816448" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="boltsOther" name="entry.719816448.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Tightness Of Electrical Terminal Connections / ตรวจเช็คสภาพของขั้วต่อสายไฟฟ้า</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.737194412" value="ขั้วสายแน่นปกติ"><label>ขั้วสายแน่นปกติ</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.737194412" value="ขั้วสายไม่แน่น"><label>ขั้วสายไม่แน่น</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="elecOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.737194412" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="elecOther" name="entry.737194412.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Air Cleaner / ตรวจเช็คไส้กรองอากาศ</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1182164809" value="ปกติ"><label>ปกติ</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1182164809" value="ไส้กรองตัน"><label>ไส้กรองตัน</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="airOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.1182164809" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="airOther" name="entry.1182164809.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Fuel Filter Element / ตรวจเช็คไส้กรองน้ำมัน(STD. ตันหรือไม่ตัน)</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.950885152" value="ไม่ตัน"><label>ไม่ตัน</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.950885152" value="ตัน"><label>ตัน</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="fuelOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.950885152" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="fuelOther" name="entry.950885152.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                    </div>
+                </div>
+
+                <div class="section-card bg-white rounded-2xl p-6 mb-6 shadow-lg">
+                    <div class="section-header border-b-2 border-gray-100 pb-3 mb-5"><h2 class="section-title text-xl font-bold text-gray-800">⚙️ ระบบปั๊ม</h2></div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Check Water Suction Tube / เช็คน้ำในท่อดูดปั๊มน้ำ</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.824942619" value="ใช้งานได้ปกติ"><label>ใช้งานได้ปกติ</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.824942619" value="มีรอยรั่ว"><label>มีรอยรั่ว</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="suctionOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.824942619" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="suctionOther" name="entry.824942619.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Jocky Pump Test / ทดสอบการทำงานของปั๊มรักษาแรงดัน</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1298699451" value="ปกติ"><label>ปกติ</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1298699451" value="ผิดปกติ"><label>ผิดปกติ</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="jockyPumpOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.1298699451" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="jockyPumpOther" name="entry.1298699451.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">แรงดันน้ำในท่อส่งน้ำดับเพลิงที่ปั๊มเริ่มทำงาน(STD. 100 PSI)</label><input type="number" name="entry.170318696" class="form-input w-full p-3 border-2 border-gray-200 rounded-lg" placeholder="STD. 100 PSI"></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">แรงดันน้ำในท่อส่งน้ำดับเพลิงที่ปั๊มหยุดทำงาน (STD. 120-130 PSI)</label><input type="number" name="entry.835390568" class="form-input w-full p-3 border-2 border-gray-200 rounded-lg" placeholder="STD. 120-130 PSI"></div>
+                    </div>
+                </div>
+
+                <div class="section-card bg-white rounded-2xl p-6 mb-6 shadow-lg">
+                    <div class="section-header border-b-2 border-gray-100 pb-3 mb-5"><h2 class="section-title text-xl font-bold text-gray-800">🚗 สมรรถนะเครื่องยนต์</h2></div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="form-group">
+                            <label class="form-label font-semibold text-gray-700 block mb-2">V Belts Condition / ตรวจเช็คการทำงานของสายพาน</label>
+                            <input type="text" name="entry.380068157" class="form-input w-full p-3 border-2 border-gray-200 rounded-lg" placeholder="ระบุสภาพสายพาน (เช่น ปกติ, หย่อน, แตก)">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label font-semibold text-gray-700 block mb-2">Running Hours / จำนวนเวลาในการทำงาน (นาที)</label>
+                            <input type="text" name="entry.693422880" class="form-input w-full p-3 border-2 border-gray-200 rounded-lg" placeholder="เช่น 15">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-4">
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Engine RPM / ความเร็วรอบของเครื่องยนต์ (STD. 2,300 RPM)</label><input type="number" name="entry.1405771031" class="form-input w-full p-3 border-2 border-gray-200 rounded-lg" placeholder="STD. 2,300 RPM"></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Lubricating Oil Pressure / แรงดันของน้ำมันหล่อลื่น (STD.250-750Kpa)</label><input type="number" name="entry.1301900075" class="form-input w-full p-3 border-2 border-gray-200 rounded-lg" placeholder="STD. 250-750Kpa"></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Lubricating Oil Temperature /อุณหภูมิของน้ำมันหล่อลื่น( °C)</label><input type="number" name="entry.1118394468" class="form-input w-full p-3 border-2 border-gray-200 rounded-lg" placeholder="หน่วย °C"></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Cooling Water Pressure / แรงดันของน้ำระบายความร้อน ( °C)</label><input type="number" name="entry.278367378" class="form-input w-full p-3 border-2 border-gray-200 rounded-lg" placeholder="หน่วย °C"></div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Cooling Water Temperature / อุณภูมิของน้ำระบายความร้อน(STD. 80-100 °C)</label><input type="number" name="entry.1127101964" class="form-input w-full p-3 border-2 border-gray-200 rounded-lg" placeholder="STD. 80-100 °C"></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">แรงดันน้ำในท่อส่งน้ำดับเพลิงที่เครื่องยนต์เริ่มทำงาน (STD. 99 psi)</label><input type="number" name="entry.797055912" class="form-input w-full p-3 border-2 border-gray-200 rounded-lg" placeholder="STD. 99 psi"></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">แรงดันน้ำในท่อส่งน้ำดับเพลิงขณะเครื่องยนต์ทำงาน (STD. 120 psi)</label><input type="number" name="entry.1506477567" class="form-input w-full p-3 border-2 border-gray-200 rounded-lg" placeholder="STD. 120 psi"></div>
+                    </div>
+                </div>
+
+                <div class="section-card bg-white rounded-2xl p-6 mb-6 shadow-lg">
+                    <div class="section-header border-b-2 border-gray-100 pb-3 mb-5"><h2 class="section-title text-xl font-bold text-gray-800">💡 สถานะระบบ</h2></div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">การทำงานของไฟแสดงผล</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1316882575" value="ไฟติดครบ"><label>ไฟติดครบ</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1316882575" value="ไฟติดไม่ครบ"><label>ไฟติดไม่ครบ</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="ไฟแสดงผลOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.1316882575" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="ไฟแสดงผลOther" name="entry.1316882575.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Check Vibrations / ตรวจเช็คการสั่นของเครื่องยนต์</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.628997006" value="ปกติ"><label>ปกติ</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.628997006" value="ผิดปกติ(เครื่องสั่นมาก)"><label>ผิดปกติ</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="vibrationsOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.628997006" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="vibrationsOther" name="entry.628997006.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Check All Moving Parts For Abnormal Sounds / ตรวจเช็คส่วนที่มีการเคลื่อนที่และความผิดปกติของเสียง </label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1209254361" value="ไม่มีเสียงผิดปกติ"><label>ปกติ</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1209254361" value="มีเสียงผิดปกติ"><label>ผิดปกติ</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="soundsOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.1209254361" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="soundsOther" name="entry.1209254361.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                    </div>
+                    <div class="form-group mt-4"><label class="form-label font-semibold text-gray-700 block mb-2">Flow Switch / การทำงานของสวิทช์</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.950605992" value="ทำงานปกติ"><label>ทำงานปกติ</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.950605992" value="ทำงานผิดปกติ"><label>ทำงานผิดปกติ</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="flowSwitchOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.950605992" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="flowSwitchOther" name="entry.950605992.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                </div>
+
+                <div class="section-card bg-white rounded-2xl p-6 mb-6 shadow-lg">
+                    <div class="section-header border-b-2 border-gray-100 pb-3 mb-5"><h2 class="section-title text-xl font-bold text-gray-800">📊 การวัดเพิ่มเติม</h2></div>
+                    <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">การทดสอบ Jocky Pump เปิดวาล์วลดแรงดันน้ำในระบบท่อส่งน้ำดับเพลิง บันทึกแรงดันปั๊มทำงานงาน(psi)</label><input type="number" name="entry.700036978" class="form-input w-full p-3 border-2 border-gray-200 rounded-lg" placeholder="..."></div>
+                    <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">การทดสอบ Jocky Pump เปิดวาล์วลดแรงดันน้ำในระบบท่อส่งน้ำดับเพลิง บันทึกแรงดันปั๊มหยุดทำงาน(psi)</label><input type="number" name="entry.174910325" class="form-input w-full p-3 border-2 border-gray-200 rounded-lg" placeholder="..."></div>
+                    <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">การทดสอบ Engine Fire Pump  ปิดสวิทช์ควบคุม Jocky Pumpเปิดวาล์วลดแรงดันน้ำในระบบท่อส่งน้ำดับเพลิง บันทึกแรงดันเครื่องยนต์ทำงาน(psi)</label><input type="number" name="entry.2077235529" class="form-input w-full p-3 border-2 border-gray-200 rounded-lg" placeholder="..."></div>
+                    <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">การทดสอบ Engine Fire Pump  ปิดสวิทช์ควบคุม Jocky Pumpเปิดวาล์วลดแรงดันน้ำในระบบท่อส่งน้ำดับเพลิง บันทึกแรงดันสูงสุด(psi)</label><input type="number" name="entry.491301014" class="form-input w-full p-3 border-2 border-gray-200 rounded-lg" placeholder="..."></div>
+                </div>
+
+                <div class="section-card bg-white rounded-2xl p-6 mb-6 shadow-lg">
+                    <div class="section-header border-b-2 border-gray-100 pb-3 mb-5"><h2 class="section-title text-xl font-bold text-gray-800">🔨 กิจกรรมการบำรุงรักษา</h2></div>
+                    <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">General Cleaning/ทำความสะอาดทั่วไป (STD.ทำความสะอาด)</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1459189432" value="ทำความสะอาด"><label>ทำความสะอาด</label></div></div></div>
+                    <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">V Belts Condition/ตรวจเช็คการทำงานของสายพาน(STD.ปกติหรือฉีกขาด)</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.764561274" value="ปกติ"><label>ปกติ</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.764561274" value="ฉีกขาด"><label>ฉีกขาด</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="vbeltMaintOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.764561274" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="vbeltMaintOther" name="entry.764561274.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                    <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Record Running Hours/บันทึกจำนวนเวลาที่ทำงาน(STD.Hour)</label><input type="number" name="entry.1309858519" class="form-input w-full p-3 border-2 border-gray-200 rounded-lg" placeholder="หน่วย Hour"></div>
+                    <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Battery Charging Volt./แรงดันการชาร์จแบตเตอรี่(STD.ไม่ต่ำกว่า12v.)</label><input type="number" name="entry.1833812342" class="form-input w-full p-3 border-2 border-gray-200 rounded-lg" step="0.1" placeholder="STD. ไม่ต่ำกว่า 12v"></div>
+                    <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Test Battery/ทดสอบแบตเตอรี่(STD.ไม่ต่ำกว่า12VDC)</label><input type="number" name="entry.1502505224" class="form-input w-full p-3 border-2 border-gray-200 rounded-lg" step="0.1" placeholder="STD. ไม่ต่ำกว่า 12VDC"></div>
+                    <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Change Ludricating Oil/เปลี่ยนถ่ายน้ำมันหล่อลื่น(STD.ว/ด/ป)</label><input type="date" name="entry.376703834" class="form-input w-full p-3 border-2 border-gray-200 rounded-lg"></div>
+                    <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Change Ludricating Oil Filter/เปลี่ยนถ่ายกรองน้ำมันหล่อลื่น(STD.ว/ด/ป)</label><input type="date" name="entry.550562469" class="form-input w-full p-3 border-2 border-gray-200 rounded-lg"></div>
+                    <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Change Air Filter/เปลี่ยนใส้กรองอากาศ(STD.ว/ด/ป)</label><input type="date" name="entry.964740712" class="form-input w-full p-3 border-2 border-gray-200 rounded-lg"></div>
+                </div>
+
+                <div class="section-card bg-white rounded-2xl p-6 mb-6 shadow-lg">
+                    <div class="section-header border-b-2 border-gray-100 pb-3 mb-5"><h2 class="section-title text-xl font-bold text-gray-800">⚡ ระบบไฟฟ้า</h2></div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Inspection For Any Sign Of Wburnmarks,Oxidation,Abnormal Hissing Sound & Smell/ตรวจสอบความผิดปกติของเสียงและกลิ่น(STD.เสียงดัง/ไม่เหม็น)</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1952860784" value="ปกติ"><label>ปกติ</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1952860784" value="ผิดปกติ"><label>ผิดปกติ</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="sound_smellOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.1952860784" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="sound_smellOther" name="entry.1952860784.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Check Status Of All Indication/ตรวจเช็คสภาพของ Indicator ต่างๆของ Circuit Brecaker(STD.ใช้งานได้)</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1304076428" value="ใช้งานได้"><label>ใช้งานได้</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1304076428" value="ผิดปกติ"><label>ผิดปกติ</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="indicatorOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.1304076428" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="indicatorOther" name="entry.1304076428.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Check For General Operation & Condition/ตรวจสอบสภาพและการทำงานทั่วไป(STD.ใช้งานได้)</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1601277291" value="ใช้งานได้"><label>ใช้งานได้</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1601277291" value="ผิดปกติ"><label>ผิดปกติ</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="generalOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.1601277291" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="generalOther" name="entry.1601277291.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Check Casing Condition/ตรวจสอบสภาพโครงสร้างของอุปกรณ์(STD.ใช้งานได้)</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.851234898" value="ใช้งานได้"><label>ใช้งานได้</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.851234898" value="ผิดปกติ"><label>ผิดปกติ</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="casingOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.851234898" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="casingOther" name="entry.851234898.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Dedusting/ทำการทำความสะอาดภายนอกตามจุดต่างๆที่มีฝุ่นละออง(STD.ทำความสะอาด)</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.362638249" value="ทำความสะอาด"><label>ทำความสะอาด</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="dustOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.362638249" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="dustOther" name="entry.362638249.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Body,Cubicle&Racking Cleaning / ทำความสะอาดภายในและชิ้นส่วนเมคคานิคต่าง ๆ(STD.ทำความสะอาด)</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1151340514" value="ทำความสะอาด"><label>ทำความสะอาด</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="bodyOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.1151340514" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="bodyOther" name="entry.1151340514.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Insulation Resistance Test & Grounding Checked / ตรวจสอบฉนวนและกราวด์(STD.ปกติหรือเสื่อมสภาพ)</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1956843408" value="ปกติ"><label>ปกติ</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1956843408" value="เสื่อมสภาพ"><label>เสื่อมสภาพ</label></div></div></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Tightening Of All Electrical Connection / ตรวจขันน๊อตล็อกขั้วสายไฟและจุดต่อต่างๆ (STD.ขันแน่น)</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1745325661" value="ขันแน่น"><label>ขันแน่น</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1745325661" value="ผิดปกติ"><label>ผิดปกติ</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="tightenOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.1745325661" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="tightenOther" name="entry.1745325661.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Lubricate Mechanical Parts / ทำการหล่อลื่นตามชิ้นส่วนแมคคานิคต่าง ๆ(STD.ไม่มีในระบบ)</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1547716680" value="ไม่มีในระบบ"><label>ไม่มีในระบบ</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="lubricateOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.1547716680" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="lubricateOther" name="entry.1547716680.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                    </div>
+                </div>
+
+                <div class="section-card bg-white rounded-2xl p-6 mb-6 shadow-lg">
+                    <div class="section-header border-b-2 border-gray-100 pb-3 mb-5"><h2 class="section-title text-xl font-bold text-gray-800">🛡️ ความปลอดภัยและการป้องกัน</h2></div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Check All Safety Devices / ตรวจสอบอุปกรณ์ระบบความปลอดภัย(STD.พร้อมใช้งาน)</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.498232465" value="พร้อมใช้งาน"><label>พร้อมใช้งาน</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.498232465" value="ไม่พร้อมใช้งาน"><label>ไม่พร้อมใช้งาน</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="safetyOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.498232465" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="safetyOther" name="entry.498232465.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Check Fuses & Protection Device / ตรวจสอบฟิวส์และอุปกรณ์ป้องกันต่าง ๆ(STD.พร้อมใช้งาน)</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1443945119" value="พร้อมใช้งาน"><label>พร้อมใช้งาน</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1443945119" value="ไม่พร้อมใช้งาน"><label>ไม่พร้อมใช้งาน</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="fusesOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.1443945119" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="fusesOther" name="entry.1443945119.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Tightening Busbar Supports / ตรวจน๊อตยึดแท่งบัสบาร์(STD.ไม่มีในระบบ)</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.614621971" value="ไม่มีในระบบ"><label>ไม่มีในระบบ</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="busbarOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.614621971" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="busbarOther" name="entry.614621971.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Check Communication for Building Automation System/ตรวจสอบการทำงานในสภาวะต่างๆ ในระบบอาคารอัติโนมัติ(STD.ใช้งานได้)</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.569091221" value="ใช้งานได้"><label>ใช้งานได้</label></div><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.569091221" value="ไม่พร้อมใช้งาน"><label>ไม่พร้อมใช้งาน</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="buildingOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.569091221" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="buildingOther" name="entry.569091221.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Check Communication for RUUor DDC to Building Automation System and Cleaning/ตรวจสอบการสื่อสารระหว่างอุปกรณ์ต่อพ่วงกับระบบอาคารอัตโนมัติพร้อมทั้งทำความสะอาด(STD.ทำความสะอาด)</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.673310831" value="ทำความสะอาด"><label>ทำความสะอาด</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="commOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.673310831" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="commOther" name="entry.673310831.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">Check Status Lamp Show for Annuciator Panel/ตรวจสอบหลอดไฟแสดงการทำงานในสภาวะต่าง ๆ(STD.ไฟติดครบ)</label><div class="radio-group flex flex-wrap gap-4"><div class="radio-item border-2 rounded-lg p-2 cursor-pointer flex items-center gap-2" onclick="selectRadio(this)"><input type="radio" class="theme-accent-color" name="entry.1022996900" value="ไฟติดครบ"><label>ไฟติดครบ</label></div><div class="radio-item-other border-2 rounded-lg p-2 cursor-pointer" onclick="selectRadio(this)" data-other-target="lampOther"><div class="flex items-center gap-2"><input type="radio" class="theme-accent-color" name="entry.1022996900" value="__other_option__"><label>อื่นๆ…</label></div><input type="text" id="lampOther" name="entry.1022996900.other_option_response" class="other-input w-full mt-2 p-1 border rounded hidden" placeholder="ระบุ..."></div></div></div>
+                    </div>
+                    <div class="form-group mt-4"><label class="form-label font-semibold text-gray-700 block mb-2">Record Voltage / บันทึกค่าแรงดัน(STD.ไม่ต่ำกว่า 12v)</label><input type="number" name="entry.209108764" class="form-input w-full p-3 border-2 border-gray-200 rounded-lg" step="0.1" placeholder="STD. ไม่ต่ำกว่า 12v"></div>
+                </div>
+                
+                <div class="section-card bg-white rounded-2xl p-6 mb-6 shadow-lg">
+                    <div class="section-header border-b-2 border-gray-100 pb-3 mb-5"><h2 class="section-title text-xl font-bold text-gray-800">📝 ปัญหาและข้อเสนอแนะ</h2></div>
+                    <div class="grid grid-cols-1 gap-6">
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">ISSUE</label><p class="helper-text">ปัญหาที่พบ หากไม่พบปัญหาไม่ต้องกรอกข้อมูล</p><textarea name="entry.129342865" class="form-input w-full p-3 border-2 border-gray-200 rounded-lg" rows="4" placeholder="อธิบายปัญหาที่พบ..."></textarea></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">CONDITION</label><p class="helper-text">แนวทางการแก้ไขปัญหา(หากไม่มีปัญหาไม่ต้องกรอกข้อมูล)</p><textarea name="entry.690163791" class="form-input w-full p-3 border-2 border-gray-200 rounded-lg" rows="4" placeholder="อธิบายวิธีการแก้ไขปัญหา..."></textarea></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">HISTORY RECCORD</label><p class="helper-text">บันทึกประวัติการแก้ไข</p><textarea name="entry.788703385" class="form-input w-full p-3 border-2 border-gray-200 rounded-lg" rows="3" placeholder="บันทึกประวัติการซ่อมแซม..."></textarea></div>
+                        <div class="form-group"><label class="form-label font-semibold text-gray-700 block mb-2">วันตรวจเช็ครอบถัดไป</label><input type="date" name="entry.298726690" class="form-input w-full p-3 border-2 border-gray-200 rounded-lg"></div>
+                    </div>
+                </div>
+                
+                <div class="action-buttons flex flex-wrap justify-center items-center gap-4 my-8 py-6 border-t-2 border-gray-200 sticky bottom-0 bg-white/80 backdrop-blur-sm z-10">
+                    <button type="button" onclick="analyzeWithAI()" class="btn theme-gradient-bg text-white font-bold py-3 px-6 rounded-lg shadow-md flex items-center gap-2">🤖 วิเคราะห์ด้วย AI</button>
+                    <button type="button" onclick="previewAnswers()" class="btn bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-lg shadow-md">🔍 ตรวจสอบคำตอบ</button>
+                    <button type="submit" class="btn bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-3 px-6 rounded-lg shadow-md flex items-center justify-center gap-2">📤 ส่งรายงาน</button>
+                    <button type="button" onclick="resetForm()" class="btn bg-pink-500 hover:bg-pink-600 text-white font-bold py-3 px-6 rounded-lg shadow-md">🔄 รีเซ็ตแบบฟอร์ม</button>
+                    <button type="button" onclick="exportReport()" class="btn bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg shadow-md">📄 ส่งออกรายงาน</button>
                 </div>
             </form>
         </div>
@@ -111,91 +427,25 @@
     <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;" onload="handleFormSubmitted()"></iframe>
 
     <dialog id="previewDialog" class="rounded-2xl shadow-xl p-0 w-11/12 max-w-2xl"></dialog>
-    <dialog id="aiDialog" class="rounded-2xl shadow-xl p-0 w-11/12 max-w-3xl"></dialog>
+    <dialog id="aiDialog" class="rounded-2xl shadow-xl p-0 w-11/12 max-w-2xl"></dialog>
 
     <script>
-    // These functions MUST be global for the iframe `onload` to find them.
-    let formSubmitted = false;
-    function handleFormSubmitted() {
-        if (formSubmitted) {
-            alert('ส่งรายงานสำเร็จ!');
-            const submitButton = document.querySelector('#inspectionForm button[type="submit"]');
-            if (submitButton) {
-                submitButton.disabled = false;
-                submitButton.innerHTML = '<i class="fa-solid fa-paper-plane"></i><span>ส่งรายงาน</span>';
-            }
-            // Use the reset function exposed on the window object
-            if (window.app && typeof window.app.resetForm === 'function') {
-                window.app.resetForm(true);
-            }
-            formSubmitted = false;
-        }
-    }
+        // --- SCRIPT START ---
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwnY9CMkrxJJJdYB9MWwGSctzIhWa232ks3TAimrSv4CmJgIFodZhDJNOsQHnxRw3nsIw/exec";
+        let lastAiAnalysisResult = '';
 
-    // Wrap all application logic in a DOMContentLoaded event listener
-    document.addEventListener('DOMContentLoaded', function() {
-        // --- PRE-FLIGHT CHECK ---
-        if (window.location.protocol === 'file:') {
-            alert('ข้อผิดพลาด: ไฟล์นี้ต้องถูกรันผ่านเว็บเซิร์ฟเวอร์ (เช่น Live Server) ไม่สามารถเปิดโดยตรงได้ ระบบล็อกอินจะไม่ทำงาน');
-            document.body.innerHTML = `<div style="padding: 2rem; text-align: center; font-size: 1.2rem; color: red;">กรุณาเปิดไฟล์นี้ผ่านเว็บเซิร์ฟเวอร์</div>`;
-            return;
-        }
-
-        // --- CONSTANTS & STATE ---
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzpKavLhCGZTy1v4StlAdAEQIHDhD92oWngAxzHFDPkxaGTN9AyayPtL0vO4gyqxkL2qw/exec";
-        
-        // --- ELEMENT SELECTORS ---
+        // --- Login Logic ---
         const loginDialog = document.getElementById('loginDialog');
         const loginForm = document.getElementById('loginForm');
+        const loginButton = document.getElementById('loginButton');
+        const loginError = document.getElementById('loginError');
         const mainContent = document.getElementById('mainContent');
-        const inspectionForm = document.getElementById('inspectionForm');
 
-        // ===================================
-        // INITIALIZATION
-        // ===================================
-        
-        function initializeLogin() {
-            console.log("Initializing Login System...");
-            if (!loginDialog || !loginForm) {
-                console.error("Login elements not found!");
-                return;
-            }
+        loginDialog.showModal();
+        loginDialog.addEventListener('cancel', (e) => e.preventDefault());
 
-            loginDialog.showModal();
-            loginDialog.addEventListener('cancel', (e) => e.preventDefault());
-
-            loginForm.addEventListener('submit', handleLoginSubmit);
-        }
-
-        function initializeMainForm() {
-            console.log("Initializing Main Form...");
-            if (!inspectionForm) {
-                console.error("Main form element not found!");
-                return;
-            }
-            
-            autoFillCurrentDate();
-            
-            // --- Attach Event Listeners ---
-            inspectionForm.addEventListener('submit', handleMainFormSubmit);
-            document.getElementById('analyzeButton').addEventListener('click', analyzeWithAI);
-            document.getElementById('previewButton').addEventListener('click', previewAnswers);
-            document.getElementById('resetButton').addEventListener('click', () => resetForm(false));
-            
-            // Use event delegation for dynamic elements
-            inspectionForm.addEventListener('click', handleFormClicks);
-            inspectionForm.addEventListener('input', handleFormInputs);
-        }
-
-        // ===================================
-        // EVENT HANDLERS
-        // ===================================
-
-        async function handleLoginSubmit(e) {
+        loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const loginButton = document.getElementById('loginButton');
-            const loginError = document.getElementById('loginError');
-            
             loginError.textContent = '';
             loginButton.innerHTML = '<div class="spinner"></div><span class="ml-2">กำลังตรวจสอบ...</span>';
             loginButton.disabled = true;
@@ -204,7 +454,6 @@
             const password = loginForm.password.value;
 
             try {
-                console.log("Attempting to fetch login data from Apps Script...");
                 const response = await fetch(SCRIPT_URL, {
                     method: 'POST',
                     mode: 'cors',
@@ -213,78 +462,42 @@
                     body: JSON.stringify({ username, password })
                 });
 
-                if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
-
                 const result = await response.json();
-                console.log("Received response from Apps Script:", result);
 
                 if (result.success) {
-                    console.log("Login successful.");
                     loginDialog.close();
                     mainContent.classList.remove('hidden');
-                    initializeMainForm();
+                    document.body.classList.add('loggedin');
+                    initAnimations();
+                    checkForSavedData();
                 } else {
-                    console.warn("Login failed:", result.message);
-                    loginError.textContent = result.message || 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
+                    loginError.textContent = result.message || 'Login failed.';
                 }
+
             } catch (error) {
-                console.error("Login fetch failed:", error);
-                loginError.textContent = 'ไม่สามารถเชื่อมต่อได้ โปรดตรวจสอบ Console (F12)';
+                loginError.textContent = 'ไม่สามารถเชื่อมต่อได้';
             } finally {
-                loginButton.innerHTML = '<i class="fa-solid fa-arrow-right-to-bracket"></i><span>เข้าสู่ระบบ</span>';
+                loginButton.innerHTML = '<span>เข้าสู่ระบบ →</span>';
                 loginButton.disabled = false;
             }
-        }
+        });
 
-        function handleMainFormSubmit(e) {
-            e.preventDefault();
-            const submitButton = inspectionForm.querySelector('button[type="submit"]');
-            formSubmitted = true;
-            submitButton.disabled = true;
-            submitButton.innerHTML = '<div class="spinner"></div><span class="ml-2">กำลังส่ง...</span>';
-            inspectionForm.submit();
-        }
-
-        function handleFormClicks(e) {
-            const radioContainer = e.target.closest('.radio-item, .radio-item-other');
-            if (radioContainer) {
-                selectRadio(radioContainer);
-            }
-        }
-
-        function handleFormInputs(e) {
-            if (e.target.matches('input[type="number"][placeholder*="STD."]')) {
-                validateInput(e.target);
-            }
-        }
-        
-        // ===================================
-        // HELPER FUNCTIONS
-        // ===================================
-
-        function autoFillCurrentDate() {
-            const dateInput = inspectionForm.querySelector('input[name="entry.1632403651"]');
-            if (dateInput) {
-                const today = new Date();
-                const yyyy = today.getFullYear();
-                const mm = String(today.getMonth() + 1).padStart(2, '0');
-                const dd = String(today.getDate()).padStart(2, '0');
-                dateInput.value = `${yyyy}-${mm}-${dd}`;
-            }
-        }
+        let formSubmitted = false;
 
         function selectRadio(element) {
             const radio = element.querySelector('input[type="radio"]');
-            if (radio && !radio.checked) {
+            if (radio) {
                 radio.checked = true;
-                
-                const parentGroup = element.closest('.grid, .radio-group');
+                const parentGroup = element.closest('.form-group');
                 if (parentGroup) {
-                    parentGroup.querySelectorAll('.other-input').forEach(input => input.classList.add('hidden'));
+                    parentGroup.querySelectorAll('.other-input').forEach(input => {
+                        if (input.id !== (element.dataset.otherTarget || '')) {
+                           input.classList.add('hidden');
+                        }
+                    });
                 }
-                
-                if (element.classList.contains('radio-item-other')) {
-                    const otherInput = element.querySelector('.other-input');
+                if (element.hasAttribute('data-other-target')) {
+                    const otherInput = document.getElementById(element.getAttribute('data-other-target'));
                     if (otherInput) {
                         otherInput.classList.remove('hidden');
                         otherInput.focus();
@@ -292,46 +505,118 @@
                 }
             }
         }
-
-        function resetForm(force = false) {
-            if (force || confirm('คุณต้องการล้างข้อมูลในฟอร์มทั้งหมดใช่หรือไม่?')) {
-                inspectionForm.reset();
-                document.querySelectorAll('.other-input').forEach(input => input.classList.add('hidden'));
-                document.querySelectorAll('.input-ok, .input-warning, .input-critical').forEach(el => {
-                    el.classList.remove('input-ok', 'input-warning', 'input-critical');
-                });
-                autoFillCurrentDate();
+        
+        function handleOperatorChange(selectElement) {
+            const otherInput = document.getElementById('operatorOther');
+            if (selectElement.value === '__other_option__') {
+                otherInput.classList.remove('hidden');
+                otherInput.focus();
+            } else {
+                otherInput.classList.add('hidden');
             }
         }
-        // Expose resetForm globally for the iframe handler
-        window.app = { resetForm };
-        
-        // All other functions (previewAnswers, validateInput, analyzeWithAI, generateAiAnalysis) are unchanged
-        // and can be placed here. For brevity in this explanation, they are assumed to be present.
-        // ... [The full code for previewAnswers, validateInput, and AI analysis follows] ...
-        function previewAnswers() {
-            const dialog = document.getElementById('previewDialog');
-            let contentHTML = '';
-            const formData = new FormData(inspectionForm);
-            let count = 0;
-            const labelMap = new Map();
 
-            inspectionForm.querySelectorAll('.form-group').forEach(group => {
+        function getLabelMap() {
+            const labelMap = new Map();
+            document.getElementById('inspectionForm').querySelectorAll('.form-group').forEach(group => {
                 const label = group.querySelector('.form-label');
-                if (label) {
-                    group.querySelectorAll('input, textarea').forEach(input => {
-                        if (input.name) labelMap.set(input.name, label.textContent.split('/')[0].trim());
+                if(label){
+                    const labelText = label.textContent.split('/')[0].trim().replace(/\s*\(.*\)\s*/g, '');
+                    group.querySelectorAll('input, textarea, select').forEach(input => {
+                        if(input.name) labelMap.set(input.name, labelText);
                     });
                 }
             });
+            return labelMap;
+        }
+
+        // --- LocalStorage & Auto-fill Functions (RESTORED) ---
+        function checkForSavedData() {
+            const savedData = localStorage.getItem('firePumpInspectionData');
+            if (savedData) {
+                if (confirm('พบข้อมูลที่บันทึกไว้จากการส่งครั้งล่าสุด คุณต้องการกรอกข้อมูลนั้นลงในฟอร์มหรือไม่?')) {
+                    const data = JSON.parse(savedData);
+                    const form = document.getElementById('inspectionForm');
+                    for (const key in data) {
+                        const element = form.elements[key];
+                        if (element) {
+                            if (element.type === 'radio') {
+                                const radioToSelect = document.querySelector(`input[name="${key}"][value="${data[key]}"]`);
+                                if(radioToSelect) {
+                                    radioToSelect.checked = true;
+                                    const radioItem = radioToSelect.closest('.radio-item, .radio-item-other');
+                                    if(radioItem && data[key] === '__other_option__') {
+                                        const otherInputId = radioItem.dataset.otherTarget;
+                                        if (otherInputId) {
+                                            const otherInput = document.getElementById(otherInputId);
+                                            otherInput.classList.remove('hidden');
+                                        }
+                                    }
+                                }
+                            } else if (element.tagName === 'SELECT') {
+                                element.value = data[key];
+                                if(key === 'entry.1231391232' && data[key] === '__other_option__') {
+                                     handleOperatorChange(element);
+                                }
+                            } else {
+                                element.value = data[key];
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        function saveFormDataToLocalStorage() {
+            const form = document.getElementById('inspectionForm');
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
+            localStorage.setItem('firePumpInspectionData', JSON.stringify(data));
+        }
+        
+        function handleSubmit() {
+            formSubmitted = true;
+            saveFormDataToLocalStorage(); // Save data on submit
+            const submitButton = document.querySelector('button[type="submit"]');
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<div class="spinner"></div><span class="ml-2">กำลังส่ง...</span>';
+            return true;
+        }
+
+        function handleFormSubmitted() {
+            if (formSubmitted) {
+                alert('ส่งรายงานสำเร็จ!');
+                const submitButton = document.querySelector('button[type="submit"]');
+                submitButton.disabled = false;
+                submitButton.innerHTML = '📤 ส่งรายงาน';
+                resetForm(true);
+                formSubmitted = false; 
+            }
+        }
+        
+        function resetForm(force = false) {
+            if (force || confirm('คุณต้องการล้างข้อมูลในฟอร์มทั้งหมดใช่หรือไม่?')) {
+                document.getElementById('inspectionForm').reset();
+                document.querySelectorAll('.other-input').forEach(input => input.classList.add('hidden'));
+                document.getElementById('operatorOther').classList.add('hidden');
+            }
+        }
+
+        function previewAnswers() {
+            const dialog = document.getElementById('previewDialog');
+            let contentHTML = '';
+            const form = document.getElementById('inspectionForm');
+            const formData = new FormData(form);
+            let count = 0;
+            const labelMap = getLabelMap();
 
             contentHTML += '<ul class="list-none space-y-3">';
             for (const [name, value] of formData.entries()) {
                 if (value && value !== '__other_option__') {
                     let labelText = labelMap.get(name) || name;
                     if (name.includes('.other_option_response')) {
-                        const baseName = name.replace('.other_option_response', '');
-                        labelText = (labelMap.get(baseName) || baseName) + " (อื่นๆ)";
+                         const baseName = name.replace('.other_option_response', '');
+                         labelText = (labelMap.get(baseName) || baseName) + " (อื่นๆ)";
                     }
                     contentHTML += `<li class="border-b pb-2"><strong class="text-indigo-600">${labelText}:</strong><br><span class="pl-2">${value}</span></li>`;
                     count++;
@@ -345,65 +630,90 @@
 
             dialog.innerHTML = `<div class="p-6">
                 <div class="flex justify-between items-center border-b pb-3 mb-4">
-                    <h2 class="text-2xl font-bold theme-accent">พรีวิวคำตอบ</h2>
+                    <h2 class="text-2xl font-bold theme-gradient-text">พรีวิวคำตอบ</h2>
                     <button onclick="this.closest('dialog').close()" class="text-2xl font-bold text-gray-500 hover:text-gray-800">&times;</button>
                 </div>
                 <div id="previewContent" class="space-y-2 text-gray-700 max-h-[70vh] overflow-y-auto">${contentHTML}</div>
             </div>`;
             dialog.showModal();
         }
-
-        function validateInput(element) {
-            const value = parseFloat(element.value);
-            const placeholder = element.placeholder || '';
+        
+        // --- Export Report Function (RESTORED) ---
+        function exportReport() {
+            const form = document.getElementById('inspectionForm');
+            const formData = new FormData(form);
+            const labelMap = getLabelMap();
+            let reportContent = "รายงานการตรวจสอบเครื่องยนต์สูบน้ำดับเพลิง\n";
+            reportContent += "========================================\n\n";
             
-            element.classList.remove('input-ok', 'input-warning', 'input-critical');
-            if (isNaN(value)) return;
-
-            let match = placeholder.match(/(\d+)\s*-\s*(\d+)/);
-            if (match) {
-                const min = parseFloat(match[1]);
-                const max = parseFloat(match[2]);
-                if (value >= min && value <= max) element.classList.add('input-ok');
-                else element.classList.add('input-critical');
-                return;
+            reportContent += "ข้อมูลที่กรอก:\n----------------\n";
+            for (const [name, value] of formData.entries()) {
+                if (value && value !== '__other_option__') {
+                    let labelText = labelMap.get(name) || name;
+                    if (name.includes('.other_option_response')) {
+                         const baseName = name.replace('.other_option_response', '');
+                         labelText = (labelMap.get(baseName) || baseName) + " (อื่นๆ)";
+                    }
+                    reportContent += `${labelText}: ${value}\n`;
+                }
             }
-
-            match = placeholder.match(/ไม่ต่ำกว่า\s*([\d.]+)/);
-            if (match) {
-                const min = parseFloat(match[1]);
-                if (value >= min) element.classList.add('input-ok');
-                else if (value >= min * 0.9) element.classList.add('input-warning');
-                else element.classList.add('input-critical');
-                return;
+            
+            if(lastAiAnalysisResult) {
+                reportContent += "\n\nผลการวิเคราะห์จาก AI:\n-----------------------\n";
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = lastAiAnalysisResult;
+                reportContent += tempDiv.innerText.replace(/(\r\n|\n|\r)/gm, "\n");
+            } else {
+                 reportContent += "\n\nยังไม่มีการวิเคราะห์ด้วย AI\n";
             }
-
-            match = placeholder.match(/([\d,]+)/);
-            if (match) {
-                const std = parseFloat(match[1].replace(/,/g, ''));
-                const tolerance = 0.10;
-                if (Math.abs(value - std) <= std * tolerance) element.classList.add('input-ok');
-                else if (Math.abs(value - std) <= std * (tolerance + 0.05)) element.classList.add('input-warning');
-                else element.classList.add('input-critical');
-            }
+            
+            const blob = new Blob([reportContent], { type: 'text/plain;charset=utf-8' });
+            const link = document.createElement('a');
+            const date = new Date().toISOString().slice(0, 10);
+            link.href = URL.createObjectURL(blob);
+            link.download = `FirePump-Report-${date}.txt`;
+            link.click();
+            URL.revokeObjectURL(link.href);
         }
+
+        // --- START: LOCAL AI ANALYSIS ENGINE (UPGRADED) ---
 
         function analyzeWithAI() {
             const dialog = document.getElementById('aiDialog');
-            dialog.innerHTML = `<div class="p-6 md:p-8 bg-slate-50">
-                <div class="flex justify-between items-start border-b border-slate-200 pb-4 mb-5">
-                    <div class="flex items-center gap-4">
-                        <img src="ai_avatar.png" alt="AI Avatar Mekha" class="w-16 h-16 bg-white p-1 rounded-full shadow-lg border-2 theme-accent-border">
-                        <div>
-                            <h2 class="text-2xl font-bold text-slate-800">AI Engineer "เมฆา"</h2>
-                            <p class="text-slate-500">ผลการวิเคราะห์ข้อมูลเชิงลึก 🧠</p>
-                        </div>
+            
+            dialog.innerHTML = `<div class="p-6 bg-gray-50">
+                <div class="dialog-header-ai">
+                    <div class="dialog-header-content">
+                        <svg class="ai-avatar" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="AI Avatar">
+                            <defs>
+                                <linearGradient id="avatar-bg-gradient" x1="0" y1="0" x2="200" y2="200" gradientUnits="userSpaceOnUse">
+                                <stop stop-color="#3b82f6"/>
+                                <stop offset="1" stop-color="#8b5cf6"/>
+                                </linearGradient>
+                                <linearGradient id="face-plate-gradient" x1="100" y1="20" x2="100" y2="180" gradientUnits="userSpaceOnUse">
+                                <stop stop-color="#E5E7EB"/>
+                                <stop offset="1" stop-color="#D1D5DB"/>
+                                </linearGradient>
+                            </defs>
+                            <circle cx="100" cy="100" r="100" fill="url(#avatar-bg-gradient)"/>
+                            <g transform="translate(0, 10)">
+                                <path d="M85,150 L80,170 L120,170 L115,150 Z" fill="#4B5563"/>
+                                <path d="M80,140 C80,155 120,155 120,140 L125,130 L75,130 Z" fill="#6B7280"/>
+                                <path d="M60,135 L50,80 Q50,30 100,30 Q150,30 150,80 L140,135 Z" fill="url(#face-plate-gradient)" stroke="#4B5563" stroke-width="3"/>
+                                <path d="M70 75 L80 65 L100 65 L105 75 L100 85 L80 85 Z" fill="#0EA5E9" stroke="white" stroke-width="2"/>
+                                <path d="M130 75 L120 65 L100 65 L95 75 L100 85 L120 85 Z" fill="#0EA5E9" stroke="white" stroke-width="2" transform="matrix(-1, 0, 0, 1, 200, 0)"/>
+                                <path d="M90,50 L110,50 M100,50 L100,40 M95,45 L105,45" stroke="#0EA5E9" stroke-width="2.5" stroke-linecap="round"/>
+                                <path d="M80,100 L120,100 L115,125 L85,125 Z" fill="#9CA3AF" stroke="#4B5563" stroke-width="2"/>
+                                <line x1="85" y1="112" x2="115" y2="112" stroke="#6B7280" stroke-width="2"/>
+                            </g>
+                        </svg>
+                        <h2 class="theme-gradient-text">ผลการวิเคราะห์จาก AI</h2>
                     </div>
-                    <button onclick="this.closest('dialog').close()" class="text-3xl text-slate-400 hover:text-slate-600 transition-colors">&times;</button>
+                    <button onclick="this.closest('dialog').close()" class="text-2xl font-bold text-gray-500 hover:text-gray-800">&times;</button>
                 </div>
-                <div id="aiLoading" class="text-center py-10">
-                    <div class="pulse-loader mx-auto"><div></div><div></div><div></div></div>
-                    <p class="text-slate-500 mt-4 font-semibold">กำลังประมวลผลข้อมูล... กรุณารอสักครู่</p>
+                <div id="aiLoading" class="text-center py-8">
+                    <div class="spinner mx-auto" style="width:40px; height:40px; border-width:4px;"></div>
+                    <p class="text-gray-500 mt-4">กำลังประมวลผลข้อมูล... กรุณารอสักครู่ 🚀</p>
                 </div>
                 <div id="aiResult" class="hidden space-y-4 max-h-[70vh] overflow-y-auto p-1"></div>
             </div>`;
@@ -415,162 +725,182 @@
             resultDiv.classList.add('hidden');
             dialog.showModal();
 
-            const formData = new FormData(inspectionForm);
-            const data = {};
-            for (const [key, value] of formData.entries()) {
-                if (key.includes('.other_option_response')) {
-                    const baseKey = key.replace('.other_option_response', '');
-                    if (data[baseKey] === '__other_option__') {
-                        data[baseKey] = value;
-                    }
-                } else if (value) {
-                    data[key] = value;
-                }
-            }
+            const form = document.getElementById('inspectionForm');
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
 
             setTimeout(() => {
                 const analysisHTML = generateAiAnalysis(data);
+                lastAiAnalysisResult = analysisHTML;
                 resultDiv.innerHTML = analysisHTML;
                 loadingDiv.style.display = 'none';
                 resultDiv.classList.remove('hidden');
             }, 1500);
         }
         
+        const analysisRules = {
+            'entry.1618028324': { label: 'ระดับน้ำมันหล่อลื่น', type: 'equals', std: 'ต่ำ', severity: 'critical', 
+                message: `<strong>วินิจฉัย:</strong> ระดับน้ำมันหล่อลื่นต่ำกว่าเกณฑ์ปกติอย่างมีนัยสำคัญ
+                          <span class="engineering-note"><strong>ผลกระทบ:</strong> เสี่ยงต่อการสึกหรอของชิ้นส่วนภายในเครื่องยนต์อย่างรุนแรง (เช่น ลูกสูบ, แบริ่ง) อาจทำให้เครื่องยนต์น็อคและเสียหายถาวรได้</span>
+                          <span class="engineering-note"><strong>คำแนะนำ:</strong> เติมน้ำมันหล่อลื่นเกรดที่ถูกต้องตามสเปคผู้ผลิตให้อยู่ในระดับ Full ทันที และตรวจสอบหารอยรั่วซึม</span>` 
+            },
+            'entry.14334317': { label: 'ระดับน้ำระบายความร้อน', type: 'equals', std: 'ต่ำ', severity: 'critical',
+                message: `<strong>วินิจฉัย:</strong> ระดับน้ำในระบบหล่อเย็นต่ำกว่าระดับที่กำหนด
+                          <span class="engineering-note"><strong>ผลกระทบ:</strong> ประสิทธิภาพการระบายความร้อนลดลง ทำให้เครื่องยนต์เกิดภาวะ Overheat ซึ่งอาจนำไปสู่การเสียหายของปะเก็นฝาสูบหรือฝาสูบโก่งได้</span>
+                          <span class="engineering-note"><strong>คำแนะนำ:</strong> เติมน้ำยาหล่อเย็น (Coolant) ให้ได้ระดับ และตรวจสอบการรั่วซึมในระบบ เช่น ท่อยาง, หม้อน้ำ, และปั๊มน้ำ</span>`
+            },
+            'entry.323305993': { label: 'การรั่วไหลของน้ำมันเชื้อเพลิง', type: 'equals', std: 'รั่วไหล', severity: 'critical',
+                message: `<strong>วินิจฉัย:</strong> ตรวจพบการรั่วซึมในระบบส่งจ่ายน้ำมันเชื้อเพลิง
+                          <span class="engineering-note"><strong>ผลกระทบ:</strong> เป็นอันตรายร้ายแรง! เสี่ยงต่อการเกิดอัคคีภัยได้ง่ายเมื่อมีประกายไฟหรือความร้อนสูง และทำให้สิ้นเปลืองเชื้อเพลิงโดยใช่เหตุ</span>
+                          <span class="engineering-note"><strong>คำแนะนำ:</strong> หยุดใช้งานเครื่องยนต์ทันที! ตรวจสอบหาจุดรั่วตามท่อทาง, ข้อต่อ, และปั๊มเชื้อเพลิง และดำเนินการซ่อมแซมโดยผู้เชี่ยวชาญ</span>`
+            },
+             'entry.1072480311': { label: 'การรั่วไหลของน้ำมันหล่อลื่น', type: 'equals', std: 'รั่วไหล', severity: 'critical',
+                message: `<strong>วินิจฉัย:</strong> ตรวจพบการรั่วซึมของน้ำมันหล่อลื่น
+                          <span class="engineering-note"><strong>ผลกระทบ:</strong> ทำให้ระดับน้ำมันหล่อลื่นลดลงอย่างรวดเร็ว ส่งผลให้การหล่อลื่นไม่เพียงพอและเครื่องยนต์อาจเสียหายรุนแรง</span>
+                          <span class="engineering-note"><strong>คำแนะนำ:</strong> ตรวจสอบหาจุดรั่วซึม เช่น ปะเก็นอ่างน้ำมันเครื่อง, ซีลข้อเหวี่ยง และทำการซ่อมแซมโดยด่วน</span>`
+            },
+            'entry.1607591057': { label: 'การรั่วไหลของน้ำระบายความร้อน', type: 'equals', std: 'รั่วไหล', severity: 'critical',
+                message: `<strong>วินิจฉัย:</strong> ตรวจพบการรั่วซึมในระบบระบายความร้อน
+                          <span class="engineering-note"><strong>ผลกระทบ:</strong> ทำให้ระดับน้ำหล่อเย็นลดลงและเกิดภาวะ Overheat ได้ง่าย</span>
+                          <span class="engineering-note"><strong>คำแนะนำ:</strong> ตรวจสอบท่อยาง, หม้อน้ำ, ปั๊มน้ำ และจุดเชื่อมต่อต่างๆ เพื่อหาและแก้ไขรอยรั่ว</span>`
+            },
+            'entry.1502505224': { label: 'Test Battery/ทดสอบแบตเตอรี่', type: 'less_than', std: 12.2, severity: 'critical', 
+                message: (val, std) => `<strong>วินิจฉัย:</strong> แรงดันไฟฟ้าของแบตเตอรี่ (วัดได้ ${val} VDC) ต่ำกว่าค่ามาตรฐานที่ควรจะเป็น (${std} VDC)
+                                     <span class="engineering-note"><strong>ผลกระทบ:</strong> กำลังในการสตาร์ทเครื่องยนต์ไม่เพียงพอ มีความเสี่ยงสูงที่จะไม่สามารถสตาร์ทเครื่องยนต์ได้ในสถานการณ์ฉุกเฉิน</span>
+                                     <span class="engineering-note"><strong>คำแนะนำ:</strong> ควรพิจารณาเปลี่ยนแบตเตอรี่ลูกใหม่ที่มีค่า CCA (Cold Cranking Amps) ตรงตามสเปคของเครื่องยนต์โดยด่วน</span>`
+            },
+            'entry.1127101964': { label: 'Cooling Water Temperature / อุณภูมิของน้ำระบายความร้อน', type: 'out_of_range', std: [80, 100], severity: 'warning',
+                message: (val, std) => `<strong>วินิจฉัย:</strong> อุณหภูมิน้ำระบายความร้อน (วัดได้ ${val} °C) อยู่นอกช่วงการทำงานปกติ (${std[0]}-${std[1]} °C)
+                                     <span class="engineering-note"><strong>ผลกระทบ:</strong> หากสูงเกินไปจะเสี่ยงต่อภาวะ Overheat หากต่ำเกินไป (หลังจากทำงานแล้ว) อาจบ่งชี้ว่าเทอร์โมสตัท (วาล์วน้ำ) เปิดค้าง</span>
+                                     <span class="engineering-note"><strong>คำแนะนำ:</strong> ตรวจสอบการทำงานของพัดลมระบายความร้อน, เทอร์โมสตัท และเช็คว่าไม่มีการอุดตันในระบบหม้อน้ำ</span>`
+            },
+            'entry.1301900075': { label: 'Lubricating Oil Pressure / แรงดันของน้ำมันหล่อลื่น', type: 'out_of_range', std: [250, 750], severity: 'critical',
+                message: (val, std) => `<strong>วินิจฉัย:</strong> แรงดันน้ำมันหล่อลื่น (วัดได้ ${val} Kpa) อยู่นอกช่วงมาตรฐาน (${std[0]}-${std[1]} Kpa)
+                                     <span class="engineering-note"><strong>ผลกระทบ:</strong> หากแรงดันต่ำเกินไป จะทำให้การหล่อลื่นไม่ทั่วถึง เกิดความเสียหายรุนแรงต่อเครื่องยนต์ได้ หากสูงเกินไปอาจเกิดจากกรองน้ำมันเครื่องอุดตัน</span>
+                                     <span class="engineering-note"><strong>คำแนะนำ:</strong> หยุดเครื่องและตรวจสอบระดับน้ำมันเครื่อง, สภาพกรองน้ำมันเครื่อง หรืออาจมีปัญหากับปั๊มน้ำมันเครื่อง (Oil Pump) ควรให้ผู้เชี่ยวชาญตรวจสอบ</span>`
+            },
+            'entry.1405771031': { label: 'Engine RPM / ความเร็วรอบของเครื่องยนต์', type: 'out_of_range', std: [2200, 2400], severity: 'warning',
+                message: (val, std) => `<strong>วินิจฉัย:</strong> ความเร็วรอบเครื่องยนต์ (วัดได้ ${val} RPM) อยู่นอกช่วงมาตรฐานที่แนะนำ (${std[0]}-${std[1]} RPM)
+                                     <span class="engineering-note"><strong>ผลกระทบ:</strong> รอบที่ผิดปกติอาจทำให้ปั๊มน้ำทำงานไม่ได้ประสิทธิภาพสูงสุด หรือทำให้เครื่องยนต์ทำงานหนักเกินไป</span>
+                                     <span class="engineering-note"><strong>คำแนะนำ:</strong> ควรทำการปรับจูน Governor หรือระบบควบคุมรอบเครื่องยนต์ให้กลับมาอยู่ในช่วงมาตรฐาน</span>`
+            },
+            'entry.964120987': { label: 'Fuel Tank Level / ระดับเชื้อเพลิงในถัง', type: 'less_than', std: 50, severity: 'warning',
+                message: (val, std) => `<strong>วินิจฉัย:</strong> ระดับน้ำมันเชื้อเพลิง (เหลือ ${val} ลิตร) ค่อนข้างน้อย
+                                     <span class="engineering-note"><strong>ผลกระทบ:</strong> อาจไม่เพียงพอต่อการทำงานต่อเนื่องเป็นเวลานานในสถานการณ์ฉุกเฉิน และการปล่อยให้ระดับน้ำมันต่ำอาจทำให้ตะกอนที่ก้นถังถูกดูดเข้าไปในระบบ</span>
+                                     <span class="engineering-note"><strong>คำแนะนำ:</strong> ควรรักษาะดับน้ำมันเชื้อเพลิงให้มากกว่า 75% ของความจุถังเสมอเพื่อความพร้อมใช้งานสูงสุด</span>`
+            },
+            'entry.170318696': { label: 'แรงดันน้ำที่ปั๊มเริ่มทำงาน', type: 'out_of_range', std: [95, 105], severity: 'warning',
+                message: (val, std) => `<strong>วินิจฉัย:</strong> Jockey Pump ตั้งค่าแรงดันเริ่มทำงานที่ ${val} PSI ซึ่งอยู่นอกช่วงที่เหมาะสม (${std[0]}-${std[1]} PSI)
+                                     <span class="engineering-note"><strong>ผลกระทบ:</strong> หากตั้งไว้ต่ำไปอาจทำให้ปั๊มไม่ทำงานเมื่อแรงดันตกเล็กน้อย หากสูงไปอาจทำให้ปั๊มทำงานบ่อยโดยไม่จำเป็น</span>
+                                     <span class="engineering-note"><strong>คำแนะนำ:</strong> ปรับตั้ง Pressure Switch ของ Jockey Pump ให้เริ่มทำงานที่ 100 PSI ตามมาตรฐาน</span>`
+            },
+            'entry.835390568': { label: 'แรงดันน้ำที่ปั๊มหยุดทำงาน', type: 'out_of_range', std: [120, 130], severity: 'warning',
+                message: (val, std) => `<strong>วินิจฉัย:</strong> Jockey Pump ตั้งค่าแรงดันหยุดทำงานที่ ${val} PSI ซึ่งอยู่นอกช่วงที่เหมาะสม (${std[0]}-${std[1]} PSI)
+                                     <span class="engineering-note"><strong>ผลกระทบ:</strong> การตั้งค่าที่ไม่ถูกต้องอาจทำให้แรงดันในเส้นท่อไม่คงที่ หรือปั๊มทำงานถี่เกินไป</span>
+                                     <span class="engineering-note"><strong>คำแนะนำ:</strong> ปรับตั้ง Pressure Switch ของ Jockey Pump ให้หยุดทำงานในช่วง 120-130 PSI ตามมาตรฐาน</span>`
+            },
+            'entry.797055912': { label: 'แรงดันน้ำที่เครื่องยนต์เริ่มทำงาน', type: 'out_of_range', std: [94, 104], severity: 'critical',
+                message: (val, std) => `<strong>วินิจฉัย:</strong> Fire Pump ตั้งค่าแรงดันเริ่มทำงานที่ ${val} PSI ซึ่งอยู่นอกช่วงมาตรฐาน (${std[0]}-${std[1]} PSI)
+                                     <span class="engineering-note"><strong>ผลกระทบ:</strong> นี่คือจุดวิกฤต! หากตั้งค่าผิดพลาด Fire Pump ซึ่งเป็นปั๊มหลักอาจไม่ทำงานเมื่อเกิดเหตุเพลิงไหม้จริง</span>
+                                     <span class="engineering-note"><strong>คำแนะนำ:</strong> ต้องทำการปรับตั้ง Pressure Switch ของ Fire Pump ให้เริ่มทำงานที่ 99 PSI (หรือต่ำกว่าแรงดันเริ่มของ Jockey Pump) โดยทันที</span>`
+            },
+        };
+
         function generateAiAnalysis(data) {
-            // This entire function is complex but self-contained. No changes needed.
-            // It is kept as is.
-            let results = { critical: new Set(), warning: new Set(), ok: new Set(), info: new Set() };
-            const getLabel = (name) => {
-                const el = document.querySelector(`[name="${name}"]`);
-                if (!el) return name;
-                const formGroup = el.closest('.form-group');
-                return (formGroup && formGroup.querySelector('.form-label')) ? formGroup.querySelector('.form-label').textContent.split('/')[0].trim() : name;
-            };
+            const labelMap = getLabelMap();
+            let criticalIssues = new Set();
+            let warnings = new Set();
+            
+            // Analyze structured data from rules
+            for (const entryId in analysisRules) {
+                const rule = analysisRules[entryId];
+                const rawValue = data[entryId];
+                
+                if (rawValue === undefined || rawValue === '' || rawValue === null) continue;
 
-            const rules = {
-                'entry.1618028324': { label: 'ระดับน้ำมันหล่อลื่น', type: 'radio', conditions: { 'ต่ำ': { severity: 'critical', msg: 'ต่ำกว่าเกณฑ์ อาจสร้างความเสียหายร้ายแรงต่อเครื่องยนต์ ควรเติมทันทีตามสเปคผู้ผลิต' } } },
-                'entry.14334317': { label: 'ระดับน้ำระบายความร้อน', type: 'radio', conditions: { 'ต่ำ': { severity: 'critical', msg: 'ต่ำกว่าเกณฑ์ อาจทำให้เครื่องยนต์ร้อนจัด (Overheat) ควรเติมน้ำยาหล่อเย็นให้อยู่ในระดับที่เหมาะสม' } } },
-                'entry.1091386807': { label: 'ระดับน้ำกลั่นแบตเตอรี่', type: 'radio', conditions: { 'ต่ำ': { severity: 'warning', msg: 'ต่ำกว่าเกณฑ์ ควรเติมน้ำกลั่นเพื่อรักษาประสิทธิภาพและยืดอายุการใช้งานแบตเตอรี่' } } },
-                'entry.964120987': { label: 'ระดับเชื้อเพลิง', type: 'numeric', conditions: { check: (val) => val < 50, severity: 'warning', msg: (val) => `มีเชื้อเพลิง ${val} ลิตร ซึ่งอาจไม่เพียงพอต่อการใช้งานฉุกเฉินเป็นเวลานาน แนะนำให้เติมเชื้อเพลิงให้พร้อมใช้อยู่เสมอ (ไม่ต่ำกว่า 75% ของถัง)` } },
-                'entry.323305993': { label: 'การรั่วไหลของน้ำมันเชื้อเพลิง', type: 'radio', conditions: { 'รั่วไหล': { severity: 'critical', msg: 'พบการรั่วไหล เป็นอันตรายร้ายแรง เสี่ยงต่อการเกิดอัคคีภัย ต้องหยุดใช้งานและซ่อมแซมทันที' } } },
-                'entry.1072480311': { label: 'การรั่วไหลของน้ำมันหล่อลื่น', type: 'radio', conditions: { 'รั่วไหล': { severity: 'critical', msg: 'พบการรั่วไหล ต้องรีบตรวจสอบและแก้ไขเพื่อป้องกันความเสียหายต่อส่วนประกอบภายในเครื่องยนต์' } } },
-                'entry.1607591057': { label: 'การรั่วไหลของน้ำระบายความร้อน', type: 'radio', conditions: { 'รั่วไหล': { severity: 'critical', msg: 'พบการรั่วไหล อาจทำให้เครื่องยนต์ Overheat และเสียหายรุนแรงได้ ต้องรีบหาจุดรั่วและซ่อมแซม' } } },
-                'entry.719816448': { label: 'สภาพของสลักและน๊อต', type: 'radio', conditions: { 'น็อตไม่แน่น': { severity: 'warning', msg: 'ตรวจพบสลักและน็อตหลวม อาจเป็นสาเหตุของการสั่นสะเทือนที่ผิดปกติและทำให้ชิ้นส่วนอื่นเสียหายตามมา ควรกวดขันให้แน่น' } } },
-                'entry.737194412': { label: 'สภาพของขั้วต่อสายไฟฟ้า', type: 'radio', conditions: { 'ขั้วสายไม่แน่น': { severity: 'warning', msg: 'ขั้วต่อสายไฟฟ้าหลวม อาจเป็นสาเหตุของความร้อนสะสม, แรงดันตก, หรือการทำงานผิดพลาดของระบบไฟฟ้า ควรกวดขันให้แน่น' } } },
-                'entry.1182164809': { label: 'ไส้กรองอากาศ', type: 'radio', conditions: { 'ไส้กรองตัน': { severity: 'warning', msg: 'ตัน ทำให้ส่วนผสมอากาศกับน้ำมันไม่สมบูรณ์ ส่งผลให้เครื่องยนต์กำลังตก, สิ้นเปลืองเชื้อเพลิง, และเกิดควันดำ ควรทำความสะอาดหรือเปลี่ยนใหม่' } } },
-                'entry.950885152': { label: 'ไส้กรองน้ำมัน', type: 'radio', conditions: { 'ตัน': { severity: 'warning', msg: 'ตัน อาจทำให้แรงดันเชื้อเพลิงตก, เครื่องยนต์เดินไม่เรียบ หรือสตาร์ทติดยาก ควรเปลี่ยนตามรอบการบำรุงรักษา' } } },
-                'entry.170318696': { label: 'แรงดันปั๊มเริ่มทำงาน', type: 'numeric', tolerance: 0.1, std: 100, msg: (val, std) => `มีค่า ${val} PSI ซึ่งอยู่นอกเกณฑ์มาตรฐาน (${std} PSI ±10%) ควรตรวจสอบ Pressure Switch ของ Jocky Pump` },
-                'entry.835390568': { label: 'แรงดันปั๊มหยุดทำงาน', type: 'numeric_range', min: 120, max: 130, msg: (val, min, max) => `มีค่า ${val} PSI ซึ่งอยู่นอกเกณฑ์มาตรฐาน (${min}-${max} PSI) ควรตรวจสอบและปรับตั้ง Pressure Switch` },
-                'entry.1405771031': { label: 'ความเร็วรอบเครื่องยนต์', type: 'numeric', tolerance: 0.1, std: 2300, msg: (val, std) => `มีค่า ${val} RPM ซึ่งอยู่นอกเกณฑ์มาตรฐาน (${std} RPM ±10%) อาจต้องปรับจูนเครื่องยนต์` },
-                'entry.1301900075': { label: 'แรงดันน้ำมันหล่อลื่น', type: 'numeric_range', min: 250, max: 750, msg: (val, min, max) => `มีค่า ${val} Kpa อยู่นอกเกณฑ์ (${min}-${max} Kpa) เป็นอันตรายต่อเครื่องยนต์ ต้องหยุดและตรวจสอบทันที` },
-                'entry.1127101964': { label: 'อุณภูมิน้ำระบายความร้อน', type: 'numeric_range', min: 80, max: 100, msg: (val, min, max) => `มีค่า ${val}°C สูง/ต่ำกว่าเกณฑ์ (${min}-${max}°C) ควรตรวจสอบระบบระบายความร้อน` },
-                'entry.797055912': { label: 'แรงดันเครื่องยนต์เริ่มทำงาน', type: 'numeric', tolerance: 0.1, std: 99, msg: (val, std) => `มีค่า ${val} PSI ซึ่งอยู่นอกเกณฑ์ (${std} PSI ±10%) อาจต้องปรับตั้ง Pressure Switch ของ Fire Pump` },
-                'entry.1506477567': { label: 'แรงดันขณะเครื่องยนต์ทำงาน', type: 'numeric', tolerance: 0.1, std: 120, msg: (val, std) => `มีค่า ${val} PSI ซึ่งต่ำกว่าเกณฑ์ (${std} PSI ±10%) อาจบ่งชี้ถึงปัญหากำลังอัดของปั๊มหรือมีจุดรั่วในระบบ` },
-                'entry.628997006': { label: 'การสั่นของเครื่องยนต์', type: 'radio', conditions: { 'ผิดปกติ(เครื่องสั่นมาก)': { severity: 'critical', msg: 'สั่นผิดปกติรุนแรง อาจเกิดจากแท่นเครื่องชำรุด, ระบบจุดระเบิด/จ่ายน้ำมันผิดพลาด หรือความไม่สมดุลของเพลา ควรให้ช่างผู้ชำนาญตรวจสอบโดยละเอียด' } } },
-                'entry.1209254361': { label: 'ความผิดปกติของเสียง', type: 'radio', conditions: { 'มีเสียงผิดปกติ': { severity: 'warning', msg: 'มีเสียงดังผิดปกติ (เช่น เสียงเคาะ, เสียงหอน) ควรระบุแหล่งที่มาของเสียงและตรวจสอบเพื่อวินิจฉัยปัญหาแต่เนิ่นๆ' } } },
-                'entry.764561274': { label: 'สภาพสายพาน (บำรุงรักษา)', type: 'radio', conditions: { 'ฉีกขาด': { severity: 'critical', msg: 'ฉีกขาดหรือมีรอยแตกร้าวรุนแรง มีความเสี่ยงสูงที่จะขาดระหว่างทำงาน ควรเปลี่ยนทันที' } } },
-                'entry.1833812342': { label: 'แรงดันการชาร์จแบตเตอรี่', type: 'numeric_min', min: 12, msg: (val, min) => `มีค่า ${val}V ต่ำกว่ามาตรฐาน (ไม่ต่ำกว่า ${min}V) อาจมีปัญหากับระบบชาร์จไฟ ควรตรวจสอบไดชาร์จ` } },
-                'entry.1502505224': { label: 'ทดสอบแบตเตอรี่', type: 'numeric_min', min: 12, msg: (val, min) => `มีค่า ${val}VDC ต่ำกว่ามาตรฐาน (${min}VDC) มีความเสี่ยงสูงที่จะสตาร์ทไม่ติดในภาวะฉุกเฉิน ควรพิจารณาเปลี่ยนแบตเตอรี่ใหม่` } },
-                'entry.1956843408': { label: 'ฉนวนและกราวด์', type: 'radio', conditions: { 'เสื่อมสภาพ': { severity: 'critical', msg: 'ฉนวนของสายไฟเสื่อมสภาพ อาจทำให้เกิดไฟรั่วหรือลัดวงจรได้ เป็นอันตรายอย่างยิ่ง ควรเปลี่ยนสายไฟหรือแก้ไขโดยด่วน' } } },
-                'entry.498232465': { label: 'อุปกรณ์ระบบความปลอดภัย', type: 'radio', conditions: { 'ไม่พร้อมใช้งาน': { severity: 'critical', msg: 'ไม่พร้อมใช้งาน ต้องรีบแก้ไขเพื่อให้ระบบสามารถป้องกันอันตรายได้อย่างสมบูรณ์เมื่อเกิดเหตุ' } } },
-                'entry.1443945119': { label: 'ฟิวส์และอุปกรณ์ป้องกัน', type: 'radio', conditions: { 'ไม่พร้อมใช้งาน': { severity: 'critical', msg: 'ไม่พร้อมใช้งาน ทำให้ระบบไฟฟ้าขาดการป้องกันที่เหมาะสม เสี่ยงต่อการลัดวงจรและความเสียหายรุนแรง' } } },
-            };
-            const additionalMeasurementRules = {
-                'entry.700036978': { label: 'Jocky Pump Start Pressure (Test)', ref_std: 'entry.170318696', type: 'numeric', tolerance: 0.1, msg: (val, std) => `ค่าที่วัดได้คือ ${val} PSI ซึ่งแตกต่างจากค่ามาตรฐานที่ตั้งไว้ (${std} PSI) เกินกว่า 10% ควรตรวจสอบความแม่นยำของ Pressure Switch` },
-                'entry.174910325': { label: 'Jocky Pump Stop Pressure (Test)', ref_std: 'entry.835390568', type: 'numeric_range', msg: (val, min, max) => `ค่าที่วัดได้คือ ${val} PSI ซึ่งอยู่นอกช่วงมาตรฐานที่ตั้งไว้ (${min}-${max} PSI) ควรตรวจสอบและปรับตั้ง Pressure Switch` },
-                'entry.2077235529': { label: 'Engine Pump Start Pressure (Test)', ref_std: 'entry.797055912', type: 'numeric', tolerance: 0.1, msg: (val, std) => `ค่าที่วัดได้คือ ${val} PSI ซึ่งแตกต่างจากค่ามาตรฐานที่ตั้งไว้ (${std} PSI) เกินกว่า 10% ควรตรวจสอบ Pressure Switch ของ Fire Pump` },
-                'entry.491301014': { label: 'Engine Pump Max Pressure (Test)', ref_std: 'entry.1506477567', type: 'numeric_min', msg: (val, std) => `ค่าแรงดันสูงสุดที่วัดได้คือ ${val} PSI ซึ่งต่ำกว่าค่ามาตรฐานขณะทำงาน (${std} PSI) อย่างมีนัยสำคัญ อาจบ่งชี้ถึงกำลังอัดของปั๊มลดลงหรือมีจุดรั่วในระบบ ควรตรวจสอบอย่างละเอียด` },
-            };
+                let conditionMet = false;
+                const numericValue = parseFloat(rawValue);
 
-            for (const name in data) {
+                switch (rule.type) {
+                    case 'equals':
+                        conditionMet = rawValue === rule.std;
+                        break;
+                    case 'less_than':
+                        conditionMet = !isNaN(numericValue) && numericValue < rule.std;
+                        break;
+                    case 'out_of_range':
+                        conditionMet = !isNaN(numericValue) && (rule.std.length === 2 && (numericValue < rule.std[0] || numericValue > rule.std[1]));
+                        break;
+                }
+
+                if (conditionMet) {
+                    const message = typeof rule.message === 'function' ? rule.message(rawValue, rule.std) : rule.message;
+                    const issue = `<li>${message}</li>`;
+                    if (rule.severity === 'critical') { criticalIssues.add(issue); } 
+                    else { warnings.add(issue); }
+                }
+            }
+            
+            // Analyze all free-text inputs for keywords
+            const keywordRules = [
+                { keyword: 'รั่ว', severity: 'critical', message: (label, text) => `<strong>การวิเคราะห์ข้อความ:</strong> ตรวจพบการระบุถึง "การรั่วซึม" ในหัวข้อ "${label}" <span class="engineering-note"><strong>ข้อความ:</strong> "${text}"<br><strong>ผลกระทบ:</strong> การรั่วซึมทุกชนิดคือความเสี่ยงร้ายแรงที่ต้องตรวจสอบโดยละเอียดทันที</span>` },
+                { keyword: 'ซึม', severity: 'critical', message: (label, text) => `<strong>การวิเคราะห์ข้อความ:</strong> ตรวจพบการระบุถึง "การซึม" ในหัวข้อ "${label}" <span class="engineering-note"><strong>ข้อความ:</strong> "${text}"<br><strong>คำแนะนำ:</strong> การซึมเป็นสัญญาณเริ่มต้นของการรั่วไหล ควรหาที่มาและทำการแก้ไขก่อนจะลุกลาม</span>` },
+                { keyword: 'แตก', severity: 'warning', message: (label, text) => `<strong>การวิเคราะห์ข้อความ:</strong> ตรวจพบการระบุถึงการ "แตก" ของชิ้นส่วน ในหัวข้อ "${label}" <span class="engineering-note"><strong>ข้อความ:</strong> "${text}"<br><strong>คำแนะนำ:</strong> ชิ้นส่วนที่แตกอาจส่งผลต่อประสิทธิภาพและความปลอดภัย ควรตรวจสอบและพิจารณาเปลี่ยน</span>` },
+                { keyword: 'ร้าว', severity: 'warning', message: (label, text) => `<strong>การวิเคราะห์ข้อความ:</strong> พบการระบุถึง "รอยร้าว" ในหัวข้อ "${label}" <span class="engineering-note"><strong>ข้อความ:</strong> "${text}"<br><strong>คำแนะนำ:</strong> รอยร้าวสามารถขยายตัวได้เมื่อรับแรงสั่นสะเทือนหรือความร้อน ควรตรวจสอบและเฝ้าระวังเป็นพิเศษ</span>` }
+            ];
+
+            for(const name in data) {
                 const value = data[name];
-                if (!value || value === '__other_option__') continue;
-                const rule = rules[name];
-                if (rule) {
-                    if (rule.type === 'radio' && rule.conditions[value]) {
-                        const cond = rule.conditions[value];
-                        results[cond.severity].add(`<strong>${rule.label}:</strong> ${cond.msg}`);
-                    } else {
-                        const numVal = parseFloat(value);
-                        if (!isNaN(numVal)) {
-                            let triggered = false;
-                            if (rule.type === 'numeric' && Math.abs(numVal - rule.std) > rule.std * rule.tolerance) {
-                                results.warning.add(`<strong>${rule.label}:</strong> ${rule.msg(numVal, rule.std)}`);
-                                triggered = true;
-                            } else if (rule.type === 'numeric_range' && (numVal < rule.min || numVal > rule.max)) {
-                                results.critical.add(`<strong>${rule.label}:</strong> ${rule.msg(numVal, rule.min, rule.max)}`);
-                                triggered = true;
-                            } else if (rule.type === 'numeric_min' && numVal < rule.min) {
-                                results.warning.add(`<strong>${rule.label}:</strong> ${rule.msg(numVal, rule.min)}`);
-                                triggered = true;
+                if(typeof value === 'string' && value.trim() !== '') {
+                    const lowerCaseValue = value.toLowerCase();
+                    const isOtherField = name.includes('.other_option_response');
+                    const isTextField = name === 'entry.129342865' || name === 'entry.380068157';
+
+                    if (isOtherField || isTextField) {
+                        const label = labelMap.get(name) || name;
+                        keywordRules.forEach(rule => {
+                            if (lowerCaseValue.includes(rule.keyword)) {
+                                const issue = `<li>${rule.message(label, value)}</li>`;
+                                if (rule.severity === 'critical') criticalIssues.add(issue);
+                                else warnings.add(issue);
                             }
-                            if (!triggered) results.ok.add(rule.label);
-                        }
+                        });
                     }
                 }
-                if (typeof value === 'string') {
-                    const text = value.toLowerCase();
-                    const keywords = { critical: ['รั่ว', 'ซึม', 'แตก', 'หัก', 'ร้าว', 'สตาร์ทไม่ติด', 'ไม่ทำงาน', 'ไฟลุก', 'ไฟไหม้'], warning: ['หย่อน', 'เสียงดัง', 'เสียงแปลก', 'สั่น', 'กระตุก', 'ร้อน', 'หลวม', 'ควันดำ', 'ควันขาว'] };
-                    if (keywords.critical.some(kw => text.includes(kw))) { results.critical.add(`<strong>${getLabel(name)}:</strong> พบข้อความที่น่ากังวล "${value}" ควรตรวจสอบอย่างละเอียด`); }
-                    else if (keywords.warning.some(kw => text.includes(kw))) { results.warning.add(`<strong>${getLabel(name)}:</strong> พบข้อความที่ควรให้ความสนใจ "${value}"`); }
-                }
-                if (name === 'entry.129342865' && value) results.info.add(`<strong>ปัญหาที่พบ (ISSUE):</strong> ${value}`);
-                if (name === 'entry.690163791' && value) results.info.add(`<strong>แนวทางการแก้ไข:</strong> ${value}`);
             }
+            
+            // Build the final HTML report
+            const critArray = Array.from(criticalIssues);
+            const warnArray = Array.from(warnings);
+            let html = '';
 
-            for (const name in additionalMeasurementRules) {
-                const rule = additionalMeasurementRules[name];
-                const testValue = parseFloat(data[name]);
-                if (isNaN(testValue)) continue;
-                if (rule.type === 'numeric') {
-                    const stdValue = parseFloat(data[rule.ref_std]);
-                    if (!isNaN(stdValue) && Math.abs(testValue - stdValue) > stdValue * rule.tolerance) { results.warning.add(`<strong>${rule.label}:</strong> ${rule.msg(testValue, stdValue)}`); }
-                } else if (rule.type === 'numeric_range') {
-                    const stdValuePlaceholder = document.querySelector(`[name="${rule.ref_std}"]`)?.placeholder || '';
-                    if (stdValuePlaceholder && stdValuePlaceholder.includes('-')) {
-                        const match = stdValuePlaceholder.match(/(\d+)\s*-\s*(\d+)/);
-                        if (match) { const [min, max] = match.slice(1).map(parseFloat); if (testValue < min || testValue > max) { results.warning.add(`<strong>${rule.label}:</strong> ${rule.msg(testValue, min, max)}`); } }
-                    }
-                } else if (rule.type === 'numeric_min') {
-                    const stdValue = parseFloat(data[rule.ref_std]);
-                    if (!isNaN(stdValue) && testValue < stdValue) { results.warning.add(`<strong>${rule.label}:</strong> ${rule.msg(testValue, stdValue)}`); }
-                }
+            if (critArray.length > 0) { html += `<div class="ai-response-card ai-critical"><h3>🚨 รายการต้องแก้ไขเร่งด่วน</h3><ul>${critArray.join('')}</ul></div>`; }
+            if (warnArray.length > 0) { html += `<div class="ai-response-card ai-warning"><h3>⚠️ ข้อควรระวังทางวิศวกรรม</h3><ul>${warnArray.join('')}</ul></div>`; }
+            
+            if (critArray.length === 0 && warnArray.length === 0) {
+                html = `<div class="ai-response-card ai-summary"><h3>✅ สรุปภาพรวม</h3><p>จากการวิเคราะห์ข้อมูล ไม่พบความผิดปกติที่มีนัยสำคัญทางวิศวกรรม ระบบอยู่ในสถานะพร้อมใช้งาน</p></div>` + html;
+            } else {
+                html = `<div class="ai-response-card ai-summary"><h3>📝 สรุปภาพรวม</h3><p>ตรวจพบ ${critArray.length} ปัญหาระดับวิกฤต และ ${warnArray.length} ข้อควรระวัง กรุณาดำเนินการตามคำแนะนำทางวิศวกรรมด้านล่าง</p></div>` + html;
             }
-
-            const rpm = parseFloat(data['entry.1405771031']);
-            const oilPressure = parseFloat(data['entry.1301900075']);
-            if (!isNaN(rpm) && !isNaN(oilPressure) && rpm > 2400 && oilPressure < 300) { results.critical.add(`<strong>การวิเคราะห์เชิงสัมพันธ์:</strong> รอบเครื่องยนต์สูง แต่แรงดันน้ำมันหล่อลื่นต่ำ เป็นสภาวะอันตรายร้ายแรงต่อเครื่องยนต์ ต้องหยุดเครื่องทันที!`); }
-
-            const critArray = Array.from(results.critical);
-            const warnArray = Array.from(results.warning);
-            const infoArray = Array.from(results.info);
-
-            let statusCard = (critArray.length > 0) ? `<div class="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 border-l-4 border-red-500 ai-analysis-card"><strong class="font-bold">🚨 สรุปสถานะ: พบปัญหาร้ายแรง!</strong> โปรดตรวจสอบและแก้ไขตามรายการด้านล่างโดยด่วนที่สุด</div>`
-                : (warnArray.length > 0) ? `<div class="p-4 mb-4 text-sm text-amber-800 rounded-lg bg-amber-50 border-l-4 border-amber-500 ai-analysis-card"><strong class="font-bold">⚠️ สรุปสถานะ: พบข้อควรระวัง</strong> ระบบยังทำงานได้ แต่ควรบำรุงรักษาตามคำแนะนำเพื่อป้องกันปัญหาในอนาคต</div>`
-                : `<div class="p-4 mb-4 text-sm text-green-800 rounded-lg bg-green-50 border-l-4 border-green-500 ai-analysis-card"><strong class="font-bold">✅ สรุปสถานะ: อยู่ในเกณฑ์ดีเยี่ยม!</strong> ไม่พบปัญหาที่น่ากังวลจากการตรวจสอบ ระบบพร้อมใช้งาน</div>`;
             
-            let html = statusCard;
-            let counter = 0;
-            const createSection = (title, items, icon, colorClass, listType = 'disc') => {
-                if (items.length === 0) return '';
-                const listStyleClass = listType === 'disc' ? 'list-disc list-inside' : 'list-none';
-                let sectionHTML = `<div class="ai-analysis-card ${colorClass}" style="--i: ${counter++};"><div class="p-4 rounded-lg bg-white shadow-sm"><h3 class="text-lg font-bold mb-3 flex items-center gap-2"><i class="${icon}"></i>${title}</h3><ul class="${listStyleClass} text-sm space-y-2 pl-1">`;
-                items.forEach(item => { sectionHTML += (listType === 'disc') ? `<li class="flex items-start gap-3"><span class="mt-1.5 w-2 h-2 rounded-full ${colorClass === 'ai-card-critical' ? 'bg-red-500' : (colorClass === 'ai-card-warning' ? 'bg-amber-500' : 'bg-green-500')}"></span><div>${item}</div></li>` : `<li>- ${item}</li>`; });
-                sectionHTML += `</ul></div></div>`;
-                return sectionHTML;
-            };
-
-            html += createSection('รายการต้องแก้ไขเร่งด่วน', critArray, 'fa-solid fa-triangle-exclamation', 'ai-card-critical');
-            html += createSection('ข้อควรระวังและคำแนะนำ', warnArray, 'fa-solid fa-flag', 'ai-card-warning');
-            if (infoArray.length > 0) { html += createSection('บันทึกจากผู้ปฏิบัติงาน', infoArray, 'fa-solid fa-pencil', 'ai-card-info', 'none'); }
-            if (critArray.length === 0 && warnArray.length === 0) { html += `<div class="text-center p-8 bg-white rounded-lg ai-analysis-card ai-card-ok" style="--i: ${counter};"><i class="fa-solid fa-party-horn text-4xl text-green-500 mb-3"></i><h3 class="text-xl font-bold text-gray-800">ยอดเยี่ยม!</h3><p class="text-gray-500">จากการวิเคราะห์ ไม่พบประเด็นที่น่ากังวล ระบบอยู่ในสถานะพร้อมใช้งาน</p></div>`; }
-            
+            html += `<div class="ai-response-card ai-recommendation"><h3>💡 คำแนะนำทั่วไป</h3><p>ควรมีการจัดทำ Logbook เพื่อบันทึกค่าที่วัดได้และกิจกรรมการบำรุงรักษาทุกครั้ง ซึ่งจะช่วยในการวิเคราะห์แนวโน้ม (Trend Analysis) และการบำรุงรักษาเชิงพยากรณ์ (Predictive Maintenance) ในอนาคต</p></div>`;
+                    
             return html;
         }
 
-        // --- START THE APP ---
-        initializeLogin();
-    });
+        function initAnimations() {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                    }
+                });
+            }, { threshold: 0.1 });
+
+            document.querySelectorAll('.section-card').forEach(card => {
+                observer.observe(card);
+            });
+        }
     </script>
 </body>
 </html>
