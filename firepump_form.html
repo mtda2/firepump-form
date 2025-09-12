@@ -263,15 +263,14 @@
             <div class="container mx-auto px-4 text-center">
                  <div class="flex justify-center items-center gap-4 mb-2">
                     <svg class="w-12 h-12 sm:w-14 sm:h-14 header-gradient-text" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" stroke-width="2.5" stroke="currentColor">
-                        <path d="M14 26H2V46H14V26Z" stroke-linecap="round" stroke-linejoin="round"></path>
-                        <path d="M52 36H62V26L52 22V36Z" stroke-linecap="round" stroke-linejoin="round"></path>
-                        <path d="M42 22H14V46H42V22Z" stroke-linecap="round" stroke-linejoin="round"></path>
-                        <path d="M22 28V40" stroke-linecap="round" stroke-linejoin="round"></path>
-                        <path d="M30 28V40" stroke-linecap="round" stroke-linejoin="round"></path>
-                        <path d="M38 28V40" stroke-linecap="round" stroke-linejoin="round"></path>
-                        <path d="M14 36H52" stroke-linecap="round" stroke-linejoin="round"></path>
-                        <path d="M25 22V18" stroke-linecap="round" stroke-linejoin="round"></path>
-                        <path d="M33 22V18" stroke-linecap="round" stroke-linejoin="round"></path>
+                        <path d="M4 56 H60 V52 H4 Z" fill="currentColor" stroke-linejoin="round"></path>
+                        <path d="M26 24 V52 H58 V24 H26 Z M 32 30 V48 M 40 30 V48 M 48 30 V48" fill="none" stroke-linejoin="round" stroke-linecap="round"></path>
+                        <path d="M18 48 C 8 48, 4 38, 10 30 S 26 22, 26 34 V 48 Z" fill="none" stroke-linejoin="round" stroke-linecap="round"></path>
+                        <circle cx="16" cy="40" r="6" fill="none"></circle>
+                        <circle cx="16" cy="40" r="2.5" fill="currentColor"></circle>
+                        <path d="M18 26 V 18 H 40" fill="none" stroke-linecap="round"></path>
+                        <circle cx="44" cy="18" r="4" fill="none"></circle>
+                        <path d="M44 18 L 46 16" fill="none" stroke-linecap="round"></path>
                     </svg>
                     <h1 class="text-3xl sm:text-4xl font-bold header-gradient-text">แบบฟอร์มทดสอบเครื่องยนต์สูบน้ำดับเพลิง</h1>
                  </div>
@@ -566,7 +565,29 @@
             saveFormDataToLocalStorage();
             
             const formData = new FormData(form);
-            const dataObject = Object.fromEntries(formData.entries());
+            
+            // ### FIX FOR 'OTHER OPTION' ###
+            // Create a clean data object to send, processing the "other" fields correctly.
+            const dataObject = {};
+            for (const [key, value] of formData.entries()) {
+                if (String(value).includes('__other_option__')) {
+                    // This is an 'other' option. Find the corresponding text input.
+                    const otherKey = `${key}.other_option_response`;
+                    const otherValue = formData.get(otherKey);
+                    // Assign the text value to the main key, otherwise default to "อื่นๆ" if empty
+                    dataObject[key] = otherValue || 'อื่นๆ'; 
+                } else if (!key.includes('.other_option_response')) {
+                    // This is a regular field, not the 'other' text input itself
+                    dataObject[key] = value;
+                }
+            }
+            // Handle the special case for the operator dropdown which is not a radio group
+             if (dataObject['entry.1231391232'] === '__other_option__') {
+                const otherKey = 'entry.1231391232.other_option_response';
+                dataObject['entry.1231391232'] = formData.get(otherKey) || 'อื่นๆ';
+             }
+            // ### END FIX ###
+
 
             try {
                 const response = await fetch(SCRIPT_URL, {
@@ -846,6 +867,7 @@
         }
         
         const analysisRules = {
+            // Liquid Levels
             'entry.1618028324': { label: 'ระดับน้ำมันหล่อลื่น', type: 'equals', std: 'ต่ำ', severity: 'critical', 
                 message: `<strong>วินิจฉัย:</strong> ระดับน้ำมันหล่อลื่นต่ำกว่าเกณฑ์ปกติอย่างมีนัยสำคัญ
                           <span class="engineering-note"><strong>ผลกระทบ:</strong> เสี่ยงต่อการสึกหรอของชิ้นส่วนภายในเครื่องยนต์อย่างรุนแรง (เช่น ลูกสูบ, แบริ่ง) อาจทำให้เครื่องยนต์น็อคและเสียหายถาวรได้</span>
@@ -856,6 +878,17 @@
                           <span class="engineering-note"><strong>ผลกระทบ:</strong> ประสิทธิภาพการระบายความร้อนลดลง ทำให้เครื่องยนต์เกิดภาวะ Overheat ซึ่งอาจนำไปสู่การเสียหายของปะเก็นฝาสูบหรือฝาสูบโก่งได้</span>
                           <span class="engineering-note"><strong>คำแนะนำ:</strong> เติมน้ำยาหล่อเย็น (Coolant) ให้ได้ระดับ และตรวจสอบการรั่วซึมในระบบ เช่น ท่อยาง, หม้อน้ำ, และปั๊มน้ำ</span>`
             },
+            'entry.1091386807': { label: 'ระดับน้ำกลั่นของแบตเตอรี่', type: 'equals', std: 'ต่ำ', severity: 'critical',
+                message: `<strong>วินิจฉัย:</strong> ระดับน้ำกลั่นในแบตเตอรี่ต่ำกว่าระดับ Lower
+                          <span class="engineering-note"><strong>ผลกระทบ:</strong> แผ่นธาตุภายในแบตเตอรี่จะสัมผัสกับอากาศ เกิดปฏิกิริยาซัลเฟตเกาะที่แผ่นธาตุ ทำให้ความสามารถในการเก็บประจุลดลงอย่างถาวร และแบตเตอรี่เสื่อมสภาพก่อนเวลาอันควร</span>
+                          <span class="engineering-note"><strong>คำแนะนำ:</strong> เติมน้ำกลั่นบริสุทธิ์ (เท่านั้น) ให้อยู่ในระดับ Upper และตรวจสอบระบบการชาร์จว่ามีแรงดันสูงเกินไป (Overcharging) หรือไม่ ซึ่งเป็นสาเหตุให้น้ำกลั่นระเหยเร็ว</span>`
+            },
+             'entry.964120987': { label: 'Fuel Tank Level', type: 'less_than', std: 50, severity: 'warning',
+                message: (val) => `<strong>วินิจฉัย:</strong> ระดับน้ำมันเชื้อเพลิง (เหลือ ${val} ลิตร) ค่อนข้างน้อย
+                                     <span class="engineering-note"><strong>ผลกระทบ:</strong> อาจไม่เพียงพอต่อการทำงานต่อเนื่องเป็นเวลานานในสถานการณ์ฉุกเฉิน และการปล่อยให้ระดับน้ำมันต่ำอาจทำให้ตะกอนที่ก้นถังถูกดูดเข้าไปในระบบ</span>
+                                     <span class="engineering-note"><strong>คำแนะนำ:</strong> ควรรักษาะดับน้ำมันเชื้อเพลิงให้มากกว่า 75% ของความจุถังเสมอเพื่อความพร้อมใช้งานสูงสุด</span>`
+            },
+            // Leak Inspection
             'entry.323305993': { label: 'การรั่วไหลของน้ำมันเชื้อเพลิง', type: 'equals', std: 'รั่วไหล', severity: 'critical',
                 message: `<strong>วินิจฉัย:</strong> ตรวจพบการรั่วซึมในระบบส่งจ่ายน้ำมันเชื้อเพลิง
                           <span class="engineering-note"><strong>ผลกระทบ:</strong> เป็นอันตรายร้ายแรง! เสี่ยงต่อการเกิดอัคคีภัยได้ง่ายเมื่อมีประกายไฟหรือความร้อนสูง และทำให้สิ้นเปลืองเชื้อเพลิงโดยใช่เหตุ</span>
@@ -871,16 +904,158 @@
                           <span class="engineering-note"><strong>ผลกระทบ:</strong> ทำให้ระดับน้ำหล่อเย็นลดลงและเกิดภาวะ Overheat ได้ง่าย</span>
                           <span class="engineering-note"><strong>คำแนะนำ:</strong> ตรวจสอบท่อยาง, หม้อน้ำ, ปั๊มน้ำ และจุดเชื่อมต่อต่างๆ เพื่อหาและแก้ไขรอยรั่ว</span>`
             },
+            // Mechanical Parts
+            'entry.719816448': { label: 'ตรวจเช็คสภาพของสลักและน๊อต', type: 'equals', std: 'น็อตไม่แน่น', severity: 'warning',
+                message: `<strong>วินิจฉัย:</strong> พบสลักเกลียวหรือน็อตมีอาการคลายตัว
+                          <span class="engineering-note"><strong>ผลกระทบ:</strong> แรงสั่นสะเทือนจากการทำงานของเครื่องยนต์อาจทำให้น็อตคลายตัวมากขึ้น ส่งผลให้ชิ้นส่วนยึดไม่แน่น เกิดเสียงดัง หรืออาจหลุดจนเกิดความเสียหายได้</span>
+                          <span class="engineering-note"><strong>คำแนะนำ:</strong> ควรทำการขันน็อตให้แน่นตามค่าแรงบิด (Torque) ที่กำหนด และตรวจสอบจุดอื่นๆ ที่อาจคลายตัวได้ เช่น แท่นเครื่อง, ท่อไอเสีย</span>`
+            },
+            'entry.737194412': { label: 'ตรวจเช็คสภาพของขั้วต่อสายไฟฟ้า', type: 'equals', std: 'ขั้วสายไม่แน่น', severity: 'critical',
+                message: `<strong>วินิจฉัย:</strong> ขั้วต่อสายไฟฟ้าหลัก (เช่น ขั้วแบตเตอรี่, ไดชาร์จ, ไดสตาร์ท) ไม่แน่น
+                          <span class="engineering-note"><strong>ผลกระทบ:</strong> การเชื่อมต่อที่ไม่สมบูรณ์ทำให้เกิดความต้านทานสูง ณ จุดเชื่อมต่อ เกิดความร้อนสะสมสูงมากจนอาจละลายฉนวนและเป็นสาเหตุของเพลิงไหม้ได้ อีกทั้งยังทำให้การชาร์จไฟหรือการสตาร์ทเครื่องยนต์มีปัญหา</span>
+                          <span class="engineering-note"><strong>คำแนะนำ:</strong> ทำความสะอาดขั้วสายและขันให้แน่นทันที</span>`
+            },
+            'entry.1182164809': { label: 'ตรวจเช็คไส้กรองอากาศ', type: 'equals', std: 'ไส้กรองตัน', severity: 'warning',
+                message: `<strong>วินิจฉัย:</strong> ไส้กรองอากาศมีการอุดตัน
+                          <span class="engineering-note"><strong>ผลกระทบ:</strong> อากาศเข้าสู่ห้องเผาไหม้ได้น้อยลง ทำให้ส่วนผสมน้ำมันหนาเกินไป การเผาไหม้ไม่สมบูรณ์ เกิดควันดำ สิ้นเปลืองเชื้อเพลิง และกำลังเครื่องยนต์ตก</span>
+                          <span class="engineering-note"><strong>คำแนะนำ:</strong> เป่าทำความสะอาดหรือเปลี่ยนไส้กรองอากาศใหม่ตามความเหมาะสม</span>`
+            },
+            'entry.950885152': { label: 'ตรวจเช็คไส้กรองน้ำมัน', type: 'equals', std: 'ตัน', severity: 'warning',
+                message: `<strong>วินิจฉัย:</strong> ไส้กรองน้ำมันเชื้อเพลิง (ดีเซล) อุดตัน
+                          <span class="engineering-note"><strong>ผลกระทบ:</strong> เชื้อเพลิงไหลไปเลี้ยงปั๊มได้ไม่สะดวก ทำให้แรงดันตก เครื่องยนต์อาจเร่งไม่ขึ้น, กำลังตก, หรือดับกลางคันได้</span>
+                          <span class="engineering-note"><strong>คำแนะนำ:</strong> ควรเปลี่ยนไส้กรองน้ำมันเชื้อเพลิงตามระยะที่กำหนด หรือเปลี่ยนทันทีเมื่อพบการอุดตัน</span>`
+            },
+            // Pump System
+            'entry.824942619': { label: 'เช็คน้ำในท่อดูดปั๊มน้ำ', type: 'equals', std: 'มีรอยรั่ว', severity: 'critical',
+                message: `<strong>วินิจฉัย:</strong> ท่อทางดูด (Suction Pipe) ของปั๊มน้ำมีรอยรั่ว
+                          <span class="engineering-note"><strong>ผลกระทบ:</strong> ปั๊มจะดูดอากาศเข้าไปในระบบแทนที่จะเป็นน้ำ (เกิด Cavitation) ทำให้ปั๊มไม่สามารถสร้างแรงดันได้ หรือแรงดันตกวูบวาบ ซึ่งเป็นอันตรายอย่างยิ่งต่อประสิทธิภาพการดับเพลิง</span>
+                          <span class="engineering-note"><strong>คำแนะนำ:</strong> หาจุดรั่วและทำการซ่อมแซมโดยด่วน อาจต้องตรวจสอบซีลและปะเก็นบริเวณหน้าแปลนของปั๊มด้วย</span>`
+            },
+            'entry.1298699451': { label: 'ทดสอบการทำงานของปั๊มรักษาแรงดัน', type: 'equals', std: 'ผิดปกติ', severity: 'critical',
+                message: `<strong>วินิจฉัย:</strong> Jocky Pump (ปั๊มรักษาแรงดัน) ทำงานผิดปกติ
+                          <span class="engineering-note"><strong>ผลกระทบ:</strong> หาก Jocky Pump ไม่ทำงานเพื่อชดเชยแรงดันรั่วซึมเล็กน้อยในระบบ จะทำให้ Fire Pump ต้องทำงานบ่อยโดยไม่จำเป็น ส่งผลให้เกิดการสึกหรอและอาจทำให้ผู้ดูแลไม่ทราบถึงการรั่วซึมเล็กๆ ในระบบ</span>
+                          <span class="engineering-note"><strong>คำแนะนำ:</strong> ตรวจสอบระบบควบคุม, Pressure Switch, และตัวปั๊มของ Jocky Pump โดยละเอียด</span>`
+            },
+            'entry.170318696': { label: 'แรงดันน้ำที่ปั๊มเริ่มทำงาน', type: 'numeric_range', std: [95, 105], severity: 'critical',
+                low_message: (val, std) => `<strong>วินิจฉัย:</strong> Jockey Pump เริ่มทำงานที่แรงดัน ${val} PSI ซึ่งอาจต่ำเกินไป
+                                     <span class="engineering-note"><strong>ผลกระทบทางวิศวกรรม:</strong> หากตั้งค่า Start Pressure ต่ำเกินไป (ใกล้เคียงกับแรงดันเริ่มของ Fire Pump) อาจทำให้ Fire Pump เริ่มทำงานก่อน ซึ่งไม่ถูกต้องตามหลักการ</span>
+                                     <span class="engineering-note"><strong>คำแนะนำ:</strong> ตรวจสอบและปรับตั้ง Pressure Switch ของ Jockey Pump ให้เริ่มทำงานที่ 100 PSI</span>`,
+                high_message: (val, std) => `<strong>วินิจฉัย:</strong> Jockey Pump เริ่มทำงานที่แรงดัน ${val} PSI ซึ่งสูงเกินไป
+                                     <span class="engineering-note"><strong>ผลกระทบทางวิศวกรรม:</strong> การตั้งค่าแรงดันเริ่มทำงานสูงไป จะทำให้ปั๊มทำงานบ่อยเกินความจำเป็นและอาจทำงานตลอดเวลาหากมีรอยรั่วซึมเล็กน้อย</span>
+                                     <span class="engineering-note"><strong>คำแนะนำ:</strong> ตรวจสอบและปรับตั้ง Pressure Switch ของ Jockey Pump ให้เริ่มทำงานที่ 100 PSI</span>`
+            },
+             'entry.835390568': { label: 'แรงดันน้ำที่ปั๊มหยุดทำงาน', type: 'numeric_range', std: [120, 130], severity: 'critical',
+                low_message: (val, std) => `<strong>วินิจฉัย:</strong> Jockey Pump หยุดทำงานที่แรงดัน ${val} PSI ซึ่งต่ำกว่ามาตรฐาน (${std[0]}-${std[1]} PSI)
+                                     <span class="engineering-note"><strong>ผลกระทบทางวิศวกรรม:</strong> แรงดันในเส้นท่อจะไม่อยู่ในระดับที่พร้อมใช้งานสูงสุดตลอดเวลา</span>
+                                     <span class="engineering-note"><strong>คำแนะนำ:</strong> ปรับตั้ง Pressure Switch ของ Jockey Pump ให้หยุดทำงานในช่วง 120-130 PSI</span>`,
+                high_message: (val, std) => `<strong>วินิจฉัย:</strong> Jockey Pump หยุดทำงานที่แรงดัน ${val} PSI ซึ่งสูงกว่ามาตรฐาน (${std[0]}-${std[1]} PSI)
+                                     <span class="engineering-note"><strong>ผลกระทบทางวิศวกรรม:</strong> สร้างแรงดันในระบบสูงเกินความจำเป็นโดยใช่เหตุ อาจเป็นอันตรายต่ออุปกรณ์บางชิ้นในระยะยาว</span>
+                                     <span class="engineering-note"><strong>คำแนะนำ:</strong> ปรับตั้ง Pressure Switch ของ Jockey Pump ให้หยุดทำงานในช่วง 120-130 PSI</span>`
+            },
+            // Engine Performance
             'entry.380068157': { label: 'V Belts Condition', type: 'equals', std: 'สายพานหย่อน', severity: 'warning',
                 message: `<strong>วินิจฉัย:</strong> สายพานมีอาการหย่อน
                           <span class="engineering-note"><strong>ผลกระทบ:</strong> อาจทำให้เกิดเสียงดัง, ประสิทธิภาพการชาร์จไฟจากไดชาร์จลดลง และการระบายความร้อนจากปั๊มน้ำไม่มีประสิทธิภาพเท่าที่ควร เสี่ยงที่สายพานจะหลุดออกจากร่องพูลเลย์</span>
                           <span class="engineering-note"><strong>คำแนะนำ:</strong> ทำการปรับตั้งความตึงของสายพานให้ได้ตามมาตรฐาน (โดยทั่วไปกดแล้วยุบได้ไม่เกิน 1-1.5 ซม.) หากสายพานมีรอยแตกควรรีบเปลี่ยนใหม่</span>`
+            },
+            'entry.1506477567': { label: 'แรงดันน้ำขณะเครื่องยนต์ทำงาน', type: 'numeric_range', std: [115, 130], severity: 'warning',
+                low_message: (val, std) => `<strong>วินิจฉัย:</strong> ขณะเครื่องยนต์ทำงาน แรงดันน้ำอยู่ที่ ${val} PSI ซึ่งต่ำกว่าที่ควรจะเป็น (${std[0]}-${std[1]} PSI)
+                                     <span class="engineering-note"><strong>ผลกระทบทางวิศวกรรม:</strong> ประสิทธิภาพในการส่งน้ำดับเพลิงอาจไม่เพียงพอ โดยเฉพาะกับอาคารสูงหรือจุดที่อยู่ไกลจากปั๊ม</span>
+                                     <span class="engineering-note"><strong>คำแนะนำ:</strong> ตรวจสอบรอบเครื่องยนต์ว่าต่ำไปหรือไม่ หรืออาจมีปัญหารั่วในระบบ หรือปั๊มอาจสึกหรอ</span>`,
+                high_message: (val, std) => `<strong>วินิจฉัย:</strong> ขณะเครื่องยนต์ทำงาน แรงดันน้ำอยู่ที่ ${val} PSI ซึ่งสูงกว่าที่ควรจะเป็น (${std[0]}-${std[1]} PSI)
+                                     <span class="engineering-note"><strong>ผลกระทบทางวิศวกรรม:</strong> แรงดันที่สูงเกินไปอาจเป็นอันตรายต่อท่อ, ข้อต่อ, และวาล์วในระบบ</span>
+                                     <span class="engineering-note"><strong>คำแนะนำ:</strong> ตรวจสอบรอบเครื่องยนต์ว่าสูงเกินไปหรือไม่ หรือ Pressure Relief Valve อาจทำงานผิดปกติ</span>`
+            },
+            // System Status
+            'entry.1316882575': { label: 'การทำงานของไฟแสดงผล', type: 'equals', std: 'ไฟติดไม่ครบ', severity: 'warning',
+                message: `<strong>วินิจฉัย:</strong> ไฟแสดงสถานะบนแผงควบคุมติดไม่ครบ
+                          <span class="engineering-note"><strong>ผลกระทบ:</strong> ผู้ปฏิบัติงานอาจไม่สามารถรับทราบสถานะที่แท้จริงของระบบได้ เช่น ไม่ทราบเมื่อเกิดเหตุขัดข้อง (Fault) หรือเมื่อระบบกำลังทำงาน</span>
+                          <span class="engineering-note"><strong>คำแนะนำ:</strong> ตรวจสอบหลอดไฟและวงจรที่เกี่ยวข้องเพื่อทำการซ่อมแซม</span>`
+            },
+            'entry.628997006': { label: 'ตรวจเช็คการสั่นของเครื่องยนต์', type: 'equals', std: 'ผิดปกติ(เครื่องสั่นมาก)', severity: 'critical',
+                message: `<strong>วินิจฉัย:</strong> เครื่องยนต์มีอาการสั่นสะเทือนรุนแรงผิดปกติขณะทำงาน
+                          <span class="engineering-note"><strong>ผลกระทบ:</strong> อาจเป็นสัญญาณของปัญหาที่รุนแรง เช่น การจุดระเบิดไม่ครบสูบ, ยางแท่นเครื่องขาด, หรือความไม่สมดุลของชิ้นส่วนภายใน การปล่อยทิ้งไว้อาจทำให้เกิดความเสียหายรุนแรงตามมา</span>
+                          <span class="engineering-note"><strong>คำแนะนำ:</strong> ควรหยุดเครื่องและให้ช่างผู้ชำนาญตรวจสอบหาสาเหตุโดยละเอียด</span>`
+            },
+            'entry.1209254361': { label: 'ตรวจเช็คความผิดปกติของเสียง', type: 'equals', std: 'มีเสียงผิดปกติ', severity: 'critical',
+                message: `<strong>วินิจฉัย:</strong> มีเสียงดังผิดปกติเกิดขึ้นขณะเครื่องยนต์ทำงาน
+                          <span class="engineering-note"><strong>ผลกระทบ:</strong> เสียงที่ผิดปกติมักเป็นสัญญาณเตือนของความเสียหายที่กำลังจะเกิดขึ้น เช่น เสียงโลหะกระทบกันอาจหมายถึงชิ้นส่วนภายในหลวมหรือแตกหัก</span>
+                          <span class="engineering-note"><strong>คำแนะนำ:</strong> ระบุแหล่งที่มาของเสียงและทำการตรวจสอบโดยละเอียด อาจต้องหยุดการทำงานของเครื่องเพื่อความปลอดภัย</span>`
+            },
+            'entry.950605992': { label: 'การทำงานของสวิทช์', type: 'equals', std: 'ทำงานผิดปกติ', severity: 'critical',
+                message: `<strong>วินิจฉัย:</strong> Flow Switch ทำงานผิดปกติ
+                          <span class="engineering-note"><strong>ผลกระทบ:</strong> Flow Switch มีหน้าที่ตรวจจับการไหลของน้ำในท่อเพื่อส่งสัญญาณไปที่ตู้ควบคุม หากทำงานผิดพลาดอาจทำให้ระบบไม่ส่งสัญญาณเตือนเมื่อมีการใช้น้ำดับเพลิงจริง</span>
+                          <span class="engineering-note"><strong>คำแนะนำ:</strong> ตรวจสอบการทำงานของ Flow Switch และวงจรที่เกี่ยวข้อง</span>`
+            },
+             // Maintenance
+            'entry.764561274': { label: 'V Belts Condition/ตรวจเช็คการทำงานของสายพาน', type: 'equals', std: 'ฉีกขาด', severity: 'critical',
+                message: `<strong>วินิจฉัย:</strong> สายพานมีร่องรอยการฉีกขาด
+                          <span class="engineering-note"><strong>ผลกระทบ:</strong> มีความเสี่ยงสูงมากที่สายพานจะขาดขณะเครื่องยนต์ทำงาน ซึ่งจะทำให้อุปกรณ์ที่เกี่ยวข้องทั้งหมดหยุดทำงานทันที เช่น ปั๊มน้ำ, ไดชาร์จ ส่งผลให้เครื่อง Overheat และไม่สามารถทำงานต่อได้</span>
+                          <span class="engineering-note"><strong>คำแนะนำ:</strong> เปลี่ยนสายพานเส้นใหม่ทันที ห้ามใช้งานต่อ</span>`
+            },
+            'entry.1833812342': { label: 'แรงดันการชาร์จแบตเตอรี่', type: 'less_than', std: 13.0, severity: 'warning',
+                message: (val) => `<strong>วินิจฉัย:</strong> แรงดันการชาร์จแบตเตอรี่ (วัดได้ ${val} V) ต่ำกว่าที่ควรจะเป็น
+                                     <span class="engineering-note"><strong>ผลกระทบทางวิศวกรรม:</strong> ระบบชาร์จไฟ (ไดชาร์จ) อาจทำงานได้ไม่เต็มประสิทธิภาพ ทำให้แบตเตอรี่ไม่ได้รับการชาร์จไฟกลับเต็มที่หลังจากการสตาร์ท อาจส่งผลให้แบตเตอรี่มีไฟไม่พอในระยะยาว</span>
+                                     <span class="engineering-note"><strong>คำแนะนำ:</strong> ตรวจสอบไดชาร์จและระบบควบคุมแรงดัน (Voltage Regulator) ปกติควรมีแรงดันชาร์จอยู่ที่ประมาณ 13.5-14.5V ขณะเครื่องยนต์ทำงาน</span>`
             },
             'entry.1502505224': { label: 'Test Battery/ทดสอบแบตเตอรี่', type: 'less_than', std: 12.2, severity: 'critical', 
                 message: (val) => `<strong>วินิจฉัย:</strong> แรงดันไฟฟ้าของแบตเตอรี่ (วัดได้ ${val} VDC) ต่ำกว่าค่ามาตรฐาน
                                      <span class="engineering-note"><strong>ผลกระทบ:</strong> กำลังในการสตาร์ทเครื่องยนต์ไม่เพียงพอ มีความเสี่ยงสูงที่จะไม่สามารถสตาร์ทเครื่องยนต์ได้ในสถานการณ์ฉุกเฉิน</span>
                                      <span class="engineering-note"><strong>คำแนะนำ:</strong> ควรพิจารณาเปลี่ยนแบตเตอรี่ลูกใหม่ที่มีค่า CCA (Cold Cranking Amps) ตรงตามสเปคของเครื่องยนต์โดยด่วน</span>`
             },
+            // Electrical System
+             'entry.1952860784': { label: 'ตรวจสอบความผิดปกติของเสียงและกลิ่น', type: 'equals', std: 'ผิดปกติ', severity: 'critical',
+                message: `<strong>วินิจฉัย:</strong> ตรวจพบเสียงหรือกลิ่นผิดปกติในระบบไฟฟ้า
+                          <span class="engineering-note"><strong>ผลกระทบ:</strong> กลิ่นไหม้หรือเสียงอาร์คเป็นสัญญาณอันตรายของการลัดวงจรหรืออุปกรณ์ไฟฟ้าทำงานหนักเกินไป ซึ่งอาจนำไปสู่การเกิดเพลิงไหม้ได้</span>
+                          <span class="engineering-note"><strong>คำแนะนำ:</strong> รีบตัดระบบไฟฟ้าและตรวจสอบหาต้นตอของปัญหาโดยผู้เชี่ยวชาญทันที</span>`
+            },
+            'entry.1304076428': { label: 'ตรวจเช็คสภาพของ Indicator', type: 'equals', std: 'ผิดปกติ', severity: 'warning',
+                message: `<strong>วินิจฉัย:</strong> Indicator หรือไฟแสดงสถานะของ Circuit Breaker ทำงานผิดปกติ
+                          <span class="engineering-note"><strong>ผลกระทบ:</strong> ทำให้ไม่สามารถทราบสถานะที่แท้จริงของเบรกเกอร์ได้ (ON/OFF/TRIP)</span>
+                          <span class="engineering-note"><strong>คำแนะนำ:</strong> ตรวจสอบและซ่อมแซมกลไกหรือหลอดไฟของ Indicator</span>`
+            },
+            'entry.1601277291': { label: 'ตรวจสอบสภาพและการทำงานทั่วไป', type: 'equals', std: 'ผิดปกติ', severity: 'warning',
+                message: `<strong>วินิจฉัย:</strong> การทำงานทั่วไปของระบบไฟฟ้าผิดปกติ
+                          <span class="engineering-note"><strong>ผลกระทบ:</strong> บ่งชี้ถึงปัญหาที่อาจยังไม่แสดงอาการรุนแรง แต่ควรได้รับการตรวจสอบ</span>
+                          <span class="engineering-note"><strong>คำแนะนำ:</strong> ควรระบุรายละเอียดของความผิดปกติและดำเนินการตรวจสอบ</span>`
+            },
+             'entry.851234898': { label: 'ตรวจสอบสภาพโครงสร้างของอุปกรณ์', type: 'equals', std: 'ผิดปกติ', severity: 'warning',
+                message: `<strong>วินิจฉัย:</strong> โครงสร้างตู้ควบคุมหรืออุปกรณ์ไฟฟ้ามีสภาพผิดปกติ เช่น ขึ้นสนิม, บิดเบี้ยว, มีรอยแตก
+                          <span class="engineering-note"><strong>ผลกระทบ:</strong> อาจส่งผลต่อความแข็งแรงและความปลอดภัยในการป้องกันอุปกรณ์ภายใน</span>
+                          <span class="engineering-note"><strong>คำแนะนำ:</strong> ดำเนินการซ่อมแซมเพื่อรักษาสภาพของโครงสร้างให้สมบูรณ์</span>`
+            },
+            'entry.1956843408': { label: 'ตรวจสอบฉนวนและกราวด์', type: 'equals', std: 'เสื่อมสภาพ', severity: 'critical',
+                message: `<strong>วินิจฉัย:</strong> ฉนวนสายไฟหรือระบบกราวด์เสื่อมสภาพ
+                          <span class="engineering-note"><strong>ผลกระทบ:</strong> ฉนวนที่เสื่อมสภาพอาจทำให้เกิดไฟรั่วหรือลัดวงจรได้ ส่วนระบบกราวด์ที่ไม่ดีจะไม่สามารถป้องกันอันตรายจากไฟดูดได้เมื่อเกิดเหตุไฟรั่ว</span>
+                          <span class="engineering-note"><strong>คำแนะนำ:</strong> ตรวจวัดค่าความต้านทานฉนวนและค่าความต้านทานหลักดิน หากไม่ได้มาตรฐานต้องรีบดำเนินการแก้ไข</span>`
+            },
+            'entry.1745325661': { label: 'ตรวจขันน๊อตล็อกขั้วสายไฟและจุดต่อต่างๆ', type: 'equals', std: 'ผิดปกติ', severity: 'critical',
+                message: `<strong>วินิจฉัย:</strong> การยึดขั้วสายไฟและจุดต่อต่างๆ ไม่แน่น
+                          <span class="engineering-note"><strong>ผลกระทบ:</strong> เหมือนกับกรณีขั้วสายไม่แน่น คือทำให้เกิดความร้อนสูง (High Resistance Contact) และเสี่ยงต่อการเกิดอัคคีภัยอย่างยิ่ง</span>
+                          <span class="engineering-note"><strong>คำแนะนำ:</strong> ทำการตรวจสอบและขันจุดเชื่อมต่อทางไฟฟ้าทั้งหมดให้แน่น</span>`
+            },
+            // Safety and Protection
+            'entry.498232465': { label: 'ตรวจสอบอุปกรณ์ระบบความปลอดภัย', type: 'equals', std: 'ไม่พร้อมใช้งาน', severity: 'critical',
+                message: `<strong>วินิจฉัย:</strong> อุปกรณ์ความปลอดภัย เช่น Emergency Stop, Limit Switch, หรือเซ็นเซอร์ต่างๆ ไม่พร้อมใช้งาน
+                          <span class="engineering-note"><strong>ผลกระทบ:</strong> ระบบจะไม่สามารถหยุดทำงานหรือป้องกันตัวเองได้ในสภาวะฉุกเฉิน ซึ่งอาจนำไปสู่ความเสียหายรุนแรงต่ออุปกรณ์หรือเป็นอันตรายต่อบุคคล</span>
+                          <span class="engineering-note"><strong>คำแนะนำ:</strong> ซ่อมแซมอุปกรณ์ความปลอดภัยให้อยู่ในสภาพพร้อมใช้งาน 100% เสมอ</span>`
+            },
+            'entry.1443945119': { label: 'ตรวจสอบฟิวส์และอุปกรณ์ป้องกันต่างๆ', type: 'equals', std: 'ไม่พร้อมใช้งาน', severity: 'critical',
+                message: `<strong>วินิจฉัย:</strong> ฟิวส์หรืออุปกรณ์ป้องกัน (เช่น Circuit Breaker, Overload Relay) ไม่พร้อมใช้งาน
+                          <span class="engineering-note"><strong>ผลกระทบ:</strong> ระบบจะขาดการป้องกันกระแสเกินหรือการลัดวงจร หากเกิดเหตุขัดข้องอาจทำให้อุปกรณ์หลัก เช่น มอเตอร์หรือแผงวงจร ได้รับความเสียหายอย่างหนัก</span>
+                          <span class="engineering-note"><strong>คำแนะนำ:</strong> ตรวจสอบและเปลี่ยนฟิวส์หรือซ่อมแซมอุปกรณ์ป้องกันให้กลับมาทำงานได้ตามปกติ</span>`
+            },
+            'entry.569091221': { label: 'ตรวจสอบการทำงานในระบบอาคารอัติโนมัติ', type: 'equals', std: 'ไม่พร้อมใช้งาน', severity: 'warning',
+                message: `<strong>วินิจฉัย:</strong> การเชื่อมต่อหรือการสื่อสารกับระบบควบคุมอาคารอัตโนมัติ (BAS) ไม่ทำงาน
+                          <span class="engineering-note"><strong>ผลกระทบ:</strong> ศูนย์ควบคุมกลางจะไม่สามารถเห็นสถานะหรือควบคุม Fire Pump ได้ ทำให้การบริหารจัดการเหตุฉุกเฉินทำได้ยากขึ้น</span>
+                          <span class="engineering-note"><strong>คำแนะนำ:</strong> ตรวจสอบสายสัญญาณ, โปรโตคอลการสื่อสาร, และการตั้งค่าในระบบ BAS</span>`
+            },
+            'entry.209108764': { label: 'บันทึกค่าแรงดัน', type: 'less_than', std: 12.0, severity: 'critical',
+                message: (val) => `<strong>วินิจฉัย:</strong> แรงดันไฟฟ้าที่บันทึกได้ (${val} V) ต่ำกว่า 12V อย่างมีนัยสำคัญ
+                                     <span class="engineering-note"><strong>ผลกระทบ:</strong> เป็นสัญญาณบ่งชี้ว่าแบตเตอรี่อยู่ในสภาวะคายประจุจนเกือบหมด (Deep Discharge) หรืออาจมีเซลล์ใดเซลล์หนึ่งเสียหาย ไม่สามารถจ่ายกระแสไฟเพื่อสตาร์ทเครื่องยนต์ได้อย่างแน่นอน</span>
+                                     <span class="engineering-note"><strong>คำแนะนำ:</strong> ต้องดำเนินการแก้ไขเรื่องแบตเตอรี่และระบบชาร์จโดยทันที</span>`
+            },
+            // Existing Rules (Checked and Confirmed)
             'entry.1127101964': { label: 'Cooling Water Temperature', type: 'numeric_range', std: [80, 100], severity: 'warning',
                 low_message: (val, std) => `<strong>วินิจฉัย:</strong> อุณหภูมิน้ำหล่อเย็น (${val} °C) ต่ำกว่าช่วงทำงานปกติ (${std[0]}-${std[1]} °C)
                                      <span class="engineering-note"><strong>ผลกระทบทางวิศวกรรม:</strong> หากเครื่องทำงานมาระยะหนึ่งแล้วอุณหภูมิยังต่ำอยู่ อาจบ่งชี้ว่าเทอร์โมสตัท (วาล์วน้ำ) เปิดค้าง ทำให้เครื่องยนต์ร้อนถึงอุณหภูมิทำงานช้าเกินไป ส่งผลให้การเผาไหม้ไม่สมบูรณ์และเกิดการสึกหรอสูง</span>
@@ -904,11 +1079,6 @@
                 high_message: (val, std) => `<strong>วินิจฉัย:</strong> ความเร็วรอบเครื่องยนต์ (${val} RPM) สูงกว่าช่วงมาตรฐาน (${std[0]}-${std[1]} RPM)
                                      <span class="engineering-note"><strong>ผลกระทบทางวิศวกรรม:</strong> ทำให้เครื่องยนต์ทำงานหนักเกินความจำเป็น สิ้นเปลืองเชื้อเพลิง และเพิ่มการสึกหรอในระยะยาว อาจสร้างแรงดันในระบบสูงเกินไปจนเป็นอันตรายต่อท่อและข้อต่อได้</span>
                                      <span class="engineering-note"><strong>คำแนะนำ:</strong> ปรับจูน Governor หรือระบบควบคุมรอบเครื่องยนต์</span>`
-            },
-            'entry.964120987': { label: 'Fuel Tank Level', type: 'less_than', std: 50, severity: 'warning',
-                message: (val) => `<strong>วินิจฉัย:</strong> ระดับน้ำมันเชื้อเพลิง (เหลือ ${val} ลิตร) ค่อนข้างน้อย
-                                     <span class="engineering-note"><strong>ผลกระทบ:</strong> อาจไม่เพียงพอต่อการทำงานต่อเนื่องเป็นเวลานานในสถานการณ์ฉุกเฉิน และการปล่อยให้ระดับน้ำมันต่ำอาจทำให้ตะกอนที่ก้นถังถูกดูดเข้าไปในระบบ</span>
-                                     <span class="engineering-note"><strong>คำแนะนำ:</strong> ควรรักษาะดับน้ำมันเชื้อเพลิงให้มากกว่า 75% ของความจุถังเสมอเพื่อความพร้อมใช้งานสูงสุด</span>`
             },
             'entry.797055912': { label: 'แรงดันน้ำที่เครื่องยนต์เริ่มทำงาน', type: 'numeric_range', std: [94, 104], severity: 'critical',
                 low_message: (val, std) => `<strong>วินิจฉัย:</strong> Fire Pump ตั้งค่าแรงดันเริ่มทำงานที่ ${val} PSI ซึ่งต่ำกว่าช่วงมาตรฐาน (${std[0]}-${std[1]} PSI)
